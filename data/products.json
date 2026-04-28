@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "image": "images/card-item1.jpg",
+    "title": "AeroSwift Pro Runner",
+    "price": 120,
+    "category": "Running shoes for men"
+  },
+  {
+    "id": 2,
+    "image": "images/card-item2.jpg",
+    "title": "Urban Street Sneaker",
+    "price": 85,
+    "category": "Casual shoes for men"
+  },
+  {
+    "id": 3,
+    "image": "images/card-item3.jpg",
+    "title": "CloudWalk Comfort",
+    "price": 110,
+    "category": "Walking shoes"
+  },
+  {
+    "id": 4,
+    "image": "images/card-item4.jpg",
+    "title": "Mountain Peak Hiker",
+    "price": 145,
+    "category": "Outdoor footwear"
+  },
+  {
+    "id": 5,
+    "image": "images/card-item5.jpg",
+    "title": "Elite Court Trainer",
+    "price": 95,
+    "category": "Training shoes"
+  },
+  {
+    "id": 6,
+    "image": "images/card-item6.jpg",
+    "title": "Classic Leather Oxford",
+    "price": 130,
+    "category": "Formal shoes"
+  },
+  {
+    "id": 7,
+    "image": "images/card-item7.jpg",
+    "title": "Velocity Sport Mesh",
+    "price": 75,
+    "category": "Athletic shoes"
+  },
+  {
+    "id": 8,
+    "image": "images/card-item8.jpg",
+    "title": "Summer Breeze Loafer",
+    "price": 65,
+    "category": "Casual footwear"
+  },
+  {
+    "id": 9,
+    "image": "images/card-item9.jpg",
+    "title": "Rugged Terrain Boot",
+    "price": 160,
+    "category": "Boots"
+  },
+  {
+    "id": 10,
+    "image": "images/card-item10.jpg",
+    "title": "Sprint Master V2",
+    "price": 105,
+    "category": "Running shoes for men"
+  },
+  {
+    "id": 11,
+    "image": "images/card-item11.jpg",
+    "title": "Active Flex Knit",
+    "price": 80,
+    "category": "Lifestyle shoes"
+  },
+  {
+    "id": 12,
+    "image": "images/card-item12.jpg",
+    "title": "Pro-Grip Basketball",
+    "price": 140,
+    "category": "Basketball shoes"
+  },
+  {
+    "id": 13,
+    "image": "images/card-item13.jpg",
+    "title": "Zen Glide Yoga Shoe",
+    "price": 55,
+    "category": "Minimalist footwear"
+  },
+  {
+    "id": 14,
+    "image": "images/card-item14.jpg",
+    "title": "Impact Guard Safety",
+    "price": 115,
+    "category": "Work shoes"
+  },
+  {
+    "id": 15,
+    "image": "images/card-item15.jpg",
+    "title": "Sleek Slide Sandal",
+    "price": 40,
+    "category": "Sandals"
+  },
+  {
+    "id": 16,
+    "image": "images/card-item16.jpg",
+    "title": "Turbo Boost Racer",
+    "price": 150,
+    "category": "Performance running"
+  },
+  {
+    "id": 17,
+    "image": "images/card-item17.jpg",
+    "title": "Canvas Daily Low",
+    "price": 50,
+    "category": "Casual sneakers"
+  },
+  {
+    "id": 18,
+    "image": "images/card-item18.jpg",
+    "title": "Storm Proof All-Weather",
+    "price": 125,
+    "category": "Outdoor shoes"
+  },
+  {
+    "id": 19,
+    "image": "images/card-item19.jpg",
+    "title": "Vintage Suede Runner",
+    "price": 90,
+    "category": "Retro sneakers"
+  },
+  {
+    "id": 20,
+    "image": "images/card-item20.jpg",
+    "title": "Hydro-Dry Trail Shoe",
+    "price": 135,
+    "category": "Trail running"
+  }
+]
