@@ -131,18 +131,20 @@
 
   <div class="search-box bg-dark position-relative">
     <div class="search-wrap">
-      <div class="close-button">
-        <svg class="close" style="fill: white;">
-          <use xlink:href="#close"></use>
-        </svg>
-      </div>
-      <form id="search-form" class="text-lg-center text-md-left pt-3" action="index.html" method="get">
+      <form id="search-form" class="text-lg-center text-md-left pt-3">
         <input type="text" class="search-input" placeholder="Search...">
-        <svg class="search">
-          <use xlink:href="#search"></use>
-        </svg>
+        <button type="submit" style="background:none; border:none;">
+            <svg class="search"><use xlink:href="#search"></use></svg>
+        </button>
       </form>
     </div>
+  </div>
+
+  <div id="search-results-section" class="container padding-small" style="display: none;">
+      <h2 class="section-title">Search Results</h2>
+      <div id="search-results-grid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+          </div>
+      <hr>
   </div>
 
   <!-- quick view -->
@@ -990,96 +992,7 @@
   <script src="js/jquery-1.11.0.min.js"></script>
   <script src="js/plugins.js"></script>
   <script src="js/script.js"></script>
-  <script>/**
- * STEP 1: requestProducts()
- * This function acts as the controller. It initiates the process 
- * when the page loads, following the sequence diagram trigger.
- */
-async function requestProducts() {
-    console.log("Sequence Start: Requesting products...");
-    const jsonPath = 'data/products.json'; // The path to your JSON data source
-
-    try {
-        // FLOW: Move from Controller logic to the Data Acquisition phase
-        const data = await fetchProductsData(jsonPath);
-        
-        // FLOW: If data is acquired, move to the UI Rendering phase
-        if (data) {
-            renderUI(data);
-        }
-    } catch (error) {
-        // Error handling logic if any step in the sequence fails
-        console.error("Sequence Interrupted:", error);
-        document.getElementById('product-container').innerHTML = 
-            `<p class="text-danger">System Error: Unable to complete the request.</p>`;
-    }
-}
-
-/**
- * STEP 2: fetch(path-to-json-file) logic
- * Focuses strictly on the communication between the Client and the Data Source.
- */
-async function fetchProductsData(path) {
-    // SEND: HTTP GET Request to the server/file system
-    const response = await fetch(path);
-    
-    // VALIDATION: Check if the "Messenger" (HTTP) returned a success code (200 OK)
-    if (!response.ok) {
-        throw new Error(`HTTP Error! Status: ${response.status}`);
-    }
-
-    // TRANSFORMATION: Convert the raw byte stream into a usable JavaScript Object (JSON)
-    const products = await response.json();
-    console.log("Data Flow: JSON successfully parsed", products);
-    
-    return products;
-}
-
-/**
- * STEP 3: renderUI()
- * The final stage in the sequence diagram. It takes the processed data 
- * and maps it to the DOM (Document Object Model).
- */
-function renderUI(products) {
-    const container = document.getElementById('product-container');
-    
-    // DATA MAPPING: Loop through each object in the array
-    const htmlOutput = products.map(product => {
-        // We use template literals to inject data into your specific HTML block structure
-        return `
-          <div class="col mb-4 mb-3">
-            <div class="product-card position-relative">
-              <div class="card-img">
-                <img src="${product.image}" alt="${product.title}" class="product-image img-fluid">
-                <div class="cart-concern position-absolute d-flex justify-content-center">
-                  <div class="cart-button d-flex gap-2 justify-content-center align-items-center">
-                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modallong">
-                      <svg class="shopping-carriage"><use xlink:href="#shopping-carriage"></use></svg>
-                    </button>
-                    <button type="button" class="btn btn-light" data-bs-target="#modaltoggle" data-bs-toggle="modal">
-                      <svg class="quick-view"><use xlink:href="#quick-view"></use></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="card-detail d-flex justify-content-between align-items-center mt-3">
-                <h3 class="card-title fs-6 fw-normal m-0">
-                  <a href="index.html">${product.title}</a>
-                </h3>
-                <span class="card-price fw-bold">$${product.price}</span>
-              </div>
-            </div>
-          </div>`;
-    }).join(''); // Join array into one long string of HTML
-
-    // UPDATE: Final "Push" of data to the storefront
-    container.innerHTML = htmlOutput;
-    console.log("Sequence End: UI Rendered");
-}
-
-// Execution: Start the sequence once the DOM is ready
-document.addEventListener('DOMContentLoaded', requestProducts);
-  </script>
+  <script src="shop.js"></script>
 </body>
 
 </html>
