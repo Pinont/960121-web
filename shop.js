@@ -4,12 +4,12 @@
  * when the page loads, following the sequence diagram trigger.
  */
 async function requestProducts() {
-    console.log("Sequence Start: Requesting products...");
-    const jsonPath = 'data/products.json'; // The path to your JSON data source
+    console.log("Sequence Start: Requesting products from API...");
+    const apiUrl = 'http://localhost:3000/api/products'; // Backend API endpoint
 
     try {
         // FLOW: Move from Controller logic to the Data Acquisition phase
-        const data = await fetchProductsData(jsonPath);
+        const data = await fetchProductsData(apiUrl);
         
         // FLOW: If data is acquired, move to the UI Rendering phase
         if (data) {
@@ -21,26 +21,31 @@ async function requestProducts() {
         // Error handling logic if any step in the sequence fails
         console.error("Sequence Interrupted:", error);
         document.getElementById('product-container').innerHTML = 
-            `<p class="text-danger">System Error: Unable to complete the request.</p>`;
+            `<p class="text-danger">System Error: Unable to fetch products. Is the backend server running on port 3000?</p>`;
     }
 }
 
 /**
  * STEP 2: fetch(path-to-json-file) logic
  * Focuses strictly on the communication between the Client and the Data Source.
+ * Updated to fetch from the Express API instead of local JSON file.
  */
-async function fetchProductsData(path) {
-    // SEND: HTTP GET Request to the server/file system
-    const response = await fetch(path);
+async function fetchProductsData(apiUrl) {
+    // SEND: HTTP GET Request to the API endpoint
+    const response = await fetch(apiUrl);
     
     // VALIDATION: Check if the "Messenger" (HTTP) returned a success code (200 OK)
     if (!response.ok) {
         throw new Error(`HTTP Error! Status: ${response.status}`);
     }
 
-    // TRANSFORMATION: Convert the raw byte stream into a usable JavaScript Object (JSON)
-    const products = await response.json();
-    console.log("Data Flow: JSON successfully parsed", products);
+    // TRANSFORMATION: Convert the raw response into a JavaScript Object (JSON)
+    const result = await response.json();
+    console.log("Data Flow: API response successfully received", result);
+    
+    // Extract products array from API response
+    // API returns { success: true, data: [...], pagination: {...} }
+    const products = result.data || result;
     
     return products;
 }
