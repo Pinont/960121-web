@@ -1675,7 +1675,51 @@ a.text-hover:focus:after {
   }
 }
 
+/* Category Filter Styles */
+.filter-section {
+  background-color: var(--bs-light);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.filter-section .form-label {
+  margin-bottom: 0.75rem;
+  color: var(--bs-dark);
+  font-size: 0.95rem;
+}
+
+.filter-section .form-select {
+  border-color: #d0d0d0;
+  border-radius: 6px;
+  padding: 0.625rem 2.5rem 0.625rem 0.75rem;
+  font-size: 0.95rem;
+  color: var(--bs-body-color);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.filter-section .form-select:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(206, 7, 30, 0.15);
+}
+
+.filter-section .form-select option {
+  padding: 0.5rem;
+  color: var(--bs-body-color);
+}
+
 @media screen and (max-width: 768px) {
+  .filter-section {
+    padding: 1rem;
+  }
+  
+  .filter-section .form-label {
+    font-size: 0.85rem;
+  }
+  
+  .filter-section .form-select {
+    font-size: 0.9rem;
+  }
   .toast-notification {
     bottom: 20px;
     right: 20px;

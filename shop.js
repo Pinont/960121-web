@@ -16,6 +16,9 @@ async function requestProducts() {
             allProducts = data; // Store in global for search functionality
             renderUI(data);
             renderFeaturedProducts(data);
+            
+            // Initialize category filter
+            initializeCategoryFilter(data);
         }
     } catch (error) {
         // Error handling logic if any step in the sequence fails
@@ -29,10 +32,14 @@ async function requestProducts() {
  * STEP 2: fetch(path-to-json-file) logic
  * Focuses strictly on the communication between the Client and the Data Source.
  * Updated to fetch from the Express API instead of local JSON file.
+ * 
+ * @param {string} apiUrl - The API endpoint URL
+ * @param {string} category - Optional category filter parameter
  */
-async function fetchProductsData(apiUrl) {
-    // SEND: HTTP GET Request to the API endpoint
-    const response = await fetch(apiUrl);
+async function fetchProductsData(apiUrl, category = '') {
+    // SEND: HTTP GET Request to the API endpoint with optional category parameter
+    const url = category ? `${apiUrl}?category=${encodeURIComponent(category)}` : apiUrl;
+    const response = await fetch(url);
     
     // VALIDATION: Check if the "Messenger" (HTTP) returned a success code (200 OK)
     if (!response.ok) {
@@ -469,6 +476,77 @@ function removeFromCart(productId) {
         updateCartUI();
         saveCart();
         console.log(`✗ Product ${productId} removed from cart`);
+    }
+}
+
+/**
+ * CATEGORY FILTER FUNCTIONS
+ * Handles dynamic population and filtering of products by category
+ */
+
+/**
+ * Initialize category filter by extracting unique categories from products
+ * and populating the dropdown
+ * 
+ * @param {Array} products - Array of product objects
+ */
+function initializeCategoryFilter(products) {
+    // Extract unique categories from products
+    const categories = [...new Set(products.map(p => p.category))].sort();
+    
+    const filterDropdown = document.getElementById('category-filter');
+    if (!filterDropdown) {
+        console.warn('Category filter dropdown not found');
+        return;
+    }
+
+    // Clear existing options except the first "All Categories"
+    while (filterDropdown.options.length > 1) {
+        filterDropdown.remove(1);
+    }
+
+    // Add category options dynamically
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        filterDropdown.appendChild(option);
+    });
+
+    console.log('Category filter initialized with categories:', categories);
+
+    // Attach event listener for category change
+    filterDropdown.addEventListener('change', handleCategoryFilter);
+}
+
+/**
+ * Handle category filter change event
+ * Fetches filtered products from API and re-renders the UI
+ */
+async function handleCategoryFilter(event) {
+    const selectedCategory = event.target.value;
+    const apiUrl = 'http://localhost:3000/api/products';
+
+    try {
+        console.log(`Filtering by category: ${selectedCategory || 'All'}`);
+        
+        // Fetch filtered products from API
+        const filteredProducts = await fetchProductsData(apiUrl, selectedCategory);
+        
+        // Re-render the product grid
+        if (filteredProducts && filteredProducts.length > 0) {
+            renderUI(filteredProducts);
+        } else {
+            const container = document.getElementById('product-container');
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted fs-5">No products found in this category.</p>
+                </div>`;
+        }
+    } catch (error) {
+        console.error('Error filtering by category:', error);
+        const container = document.getElementById('product-container');
+        container.innerHTML = `<p class="text-danger">Error loading products. Please try again.</p>`;
     }
 }
 
