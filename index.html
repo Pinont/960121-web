@@ -273,32 +273,45 @@
     <div class="modal-dialog modal-fullscreen-md-down modal-md modal-dialog-centered" role="document">
       <div class="modal-content p-4">
         <div class="modal-header mx-auto border-0">
-          <h2 class="modal-title fs-3 fw-normal">Login</h2>
+          <h2 class="modal-title fs-3 fw-normal" id="modal-title">Login</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="login-detail">
+          <!-- Login Form Section -->
+          <div id="login-section" class="login-detail">
             <div class="login-form p-0">
               <div class="col-lg-12 mx-auto">
-                <form id="login-form">
-                  <input type="text" name="username" placeholder="Username or Email Address *"
-                    class="mb-3 ps-3 text-input">
-                  <input type="password" name="password" placeholder="Password" class="ps-3 text-input">
-                  <div class="checkbox d-flex justify-content-between mt-4">
-                    <p class="checkbox-form">
-                      <label class="">
-                        <input name="rememberme" type="checkbox" id="remember-me" value="forever"> Remember me </label>
-                    </p>
-                    <p class="lost-password">
-                      <a href="#">Forgot your password?</a>
-                    </p>
-                  </div>
+                <form id="index-login-form">
+                  <input type="email" name="email" id="modal-email" placeholder="Email Address *"
+                    class="mb-3 ps-3 text-input" required>
+                  <input type="password" name="password" id="modal-password" placeholder="Password" class="ps-3 text-input" required>
+                  <div id="modal-login-error" class="alert alert-danger mt-3" style="display: none;"></div>
+                  <div id="modal-login-success" class="alert alert-success mt-3" style="display: none;"></div>
                 </form>
               </div>
             </div>
             <div class="modal-footer mt-5 d-flex justify-content-center">
-              <button type="button" class="btn btn-red hvr-sweep-to-right dark-sweep">Login</button>
-              <button type="button"
-                class="btn btn-outline-gray hvr-sweep-to-right dark-sweep">Register</button>
+              <button type="button" id="modal-login-btn" class="btn btn-red hvr-sweep-to-right dark-sweep">Login</button>
+              <button type="button" class="btn btn-outline-gray hvr-sweep-to-right dark-sweep" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+
+          <!-- User Profile Section (shown when logged in) -->
+          <div id="user-section" class="user-profile" style="display: none;">
+            <div class="text-center">
+              <div class="mb-4">
+                <svg class="user" width="64" height="64" style="fill: #666;">
+                  <use xlink:href="#user"></use>
+                </svg>
+              </div>
+              <div class="user-info">
+                <h4 id="user-name" class="fw-bold mb-2">User Name</h4>
+                <p id="user-email" class="text-muted mb-4">user@example.com</p>
+              </div>
+            </div>
+            <div class="modal-footer mt-5 d-flex justify-content-center">
+              <button type="button" id="modal-logout-btn" class="btn btn-outline-red hvr-sweep-to-right dark-sweep">Logout</button>
+              <button type="button" class="btn btn-outline-gray hvr-sweep-to-right dark-sweep" data-bs-dismiss="modal">Close</button>
             </div>
           </div>
         </div>
@@ -786,8 +799,201 @@
   </footer>
   <script src="js/jquery-1.11.0.min.js"></script>
   <script src="js/plugins.js"></script>
-  <script src="js/script.js"></script>
+  <script src="js/utils.js"></script>
   <script src="shop.js"></script>
+  
+  <!-- AuthManager - Frontend Authentication -->
+  <script>
+    const AuthManager = {
+      apiBaseUrl: 'http://localhost:3000',
+
+      async login(email, password) {
+        try {
+          const response = await fetch(`${this.apiBaseUrl}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || 'Login failed');
+          this.saveToken(data.token);
+          this.saveUser(data.user);
+          return data;
+        } catch (error) {
+          console.error('Login error:', error);
+          throw error;
+        }
+      },
+
+      saveToken(token) {
+        localStorage.setItem('authToken', token);
+      },
+
+      getToken() {
+        return localStorage.getItem('authToken');
+      },
+
+      saveUser(user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      },
+
+      getUser() {
+        const user = localStorage.getItem('user');
+        return user ? JSON.parse(user) : null;
+      },
+
+      isAuthenticated() {
+        return !!this.getToken();
+      },
+
+      async authenticatedRequest(endpoint, options = {}) {
+        const token = this.getToken();
+        if (!token) throw new Error('No authentication token found');
+
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...options.headers,
+        };
+
+        const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
+          ...options,
+          headers,
+        });
+
+        if (response.status === 401) {
+          this.logout();
+          throw new Error('Session expired. Please login again.');
+        }
+
+        return response.json();
+      },
+
+      async getProfile() {
+        return this.authenticatedRequest('/api/auth/profile');
+      },
+
+      logout() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.reload();
+      },
+    };
+  </script>
+
+  <script>
+    /**
+     * Toggle between login form and user profile sections
+     */
+    function toggleModalSections() {
+      const loginSection = document.getElementById('login-section');
+      const userSection = document.getElementById('user-section');
+      const modalTitle = document.getElementById('modal-title');
+      
+      if (AuthManager.isAuthenticated()) {
+        // Show user profile section
+        const user = AuthManager.getUser();
+        document.getElementById('user-name').textContent = user.firstName;
+        document.getElementById('user-email').textContent = user.email;
+        
+        loginSection.style.display = 'none';
+        userSection.style.display = 'block';
+        modalTitle.textContent = 'Profile';
+      } else {
+        // Show login form section
+        loginSection.style.display = 'block';
+        userSection.style.display = 'none';
+        modalTitle.textContent = 'Login';
+        
+        // Clear form
+        document.getElementById('index-login-form').reset();
+        document.getElementById('modal-login-error').style.display = 'none';
+        document.getElementById('modal-login-success').style.display = 'none';
+      }
+    }
+
+    /**
+     * Handle login form submission
+     */
+    document.getElementById('modal-login-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('modal-email').value.trim();
+      const password = document.getElementById('modal-password').value;
+      const errorDiv = document.getElementById('modal-login-error');
+      const successDiv = document.getElementById('modal-login-success');
+      const loginBtn = document.getElementById('modal-login-btn');
+      
+      // Clear previous messages
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      
+      // Validate
+      if (!email || !password) {
+        errorDiv.textContent = 'Email and password are required';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      // Disable button during request
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Logging in...';
+      
+      try {
+        const response = await AuthManager.login(email, password);
+        successDiv.textContent = `Welcome, ${response.user.firstName}!`;
+        successDiv.style.display = 'block';
+        
+        // Switch to user profile section after success
+        setTimeout(() => {
+          toggleModalSections();
+          updateAuthStatus();
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login';
+        }, 1500);
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+      }
+    });
+
+    /**
+     * Handle logout
+     */
+    document.getElementById('modal-logout-btn').addEventListener('click', () => {
+      AuthManager.logout();
+      // Reload page to reset everything
+      window.location.reload();
+    });
+
+    /**
+     * Update header with user status
+     */
+    function updateAuthStatus() {
+      const userLink = document.querySelector('a[data-bs-target="#modallogin"]').parentElement;
+      if (AuthManager.isAuthenticated()) {
+        const user = AuthManager.getUser();
+        userLink.innerHTML = `<a href="#" class="text-decoration-none d-flex align-items-center gap-2" title="Profile"><svg class="user" width="24" height="24"><use xlink:href="#user"></use></svg><span class="small">${user.firstName}</span></a>`;
+      } else {
+        userLink.innerHTML = `<a href="#" data-bs-toggle="modal" data-bs-target="#modallogin" class="border-0"><svg class="user" width="24" height="24"><use xlink:href="#user"></use></svg></a>`;
+      }
+    }
+
+    /**
+     * Initialize on page load
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAuthStatus();
+    });
+
+    /**
+     * Toggle sections when modal is shown
+     */
+    const loginModal = document.getElementById('modallogin');
+    loginModal.addEventListener('show.bs.modal', toggleModalSections);
+  </script>
 </body>
 
 </html>

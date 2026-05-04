@@ -1,0 +1,106 @@
+{
+	"users": [
+		{
+			"username": "alice.smith@example.com",
+			"password": "e10adc3949ba59abbe56e057f20f883e",
+			"first_name": "Alice",
+			"registration_date": "2025-01-05"
+		},
+		{
+			"username": "bob.johnson@example.com",
+			"password": "5f4dcc3b5aa765d61d8327deb882cf99",
+			"first_name": "Bob",
+			"registration_date": "2025-01-12"
+		},
+		{
+			"username": "carol.williams@example.com",
+			"password": "d8578edf8458ce06fbc5bb76a58c5ca4",
+			"first_name": "Carol",
+			"registration_date": "2025-01-18"
+		},
+		{
+			"username": "david.brown@example.com",
+			"password": "e99a18c428cb38d5f260853678922e03",
+			"first_name": "David",
+			"registration_date": "2025-01-24"
+		},
+		{
+			"username": "emma.jones@example.com",
+			"password": "0d107d09f5bbe40cade3de5c71e9e9b7",
+			"first_name": "Emma",
+			"registration_date": "2025-02-02"
+		},
+		{
+			"username": "frank.miller@example.com",
+			"password": "21232f297a57a5a743894a0e4a801fc3",
+			"first_name": "Frank",
+			"registration_date": "2025-02-08"
+		},
+		{
+			"username": "grace.davis@example.com",
+			"password": "e10adc3949ba59abbe56e057f20f883e",
+			"first_name": "Grace",
+			"registration_date": "2025-02-14"
+		},
+		{
+			"username": "henry.wilson@example.com",
+			"password": "5f4dcc3b5aa765d61d8327deb882cf99",
+			"first_name": "Henry",
+			"registration_date": "2025-02-20"
+		},
+		{
+			"username": "irene.moore@example.com",
+			"password": "d8578edf8458ce06fbc5bb76a58c5ca4",
+			"first_name": "Irene",
+			"registration_date": "2025-02-26"
+		},
+		{
+			"username": "jack.taylor@example.com",
+			"password": "e99a18c428cb38d5f260853678922e03",
+			"first_name": "Jack",
+			"registration_date": "2025-03-03"
+		}
+	],
+	"login_tests": [
+		{
+			"email": "alice.smith@example.com",
+			"plaintext_password": "123456"
+		},
+		{
+			"email": "bob.johnson@example.com",
+			"plaintext_password": "password"
+		},
+		{
+			"email": "carol.williams@example.com",
+			"plaintext_password": "qwerty"
+		},
+		{
+			"email": "david.brown@example.com",
+			"plaintext_password": "abc123"
+		},
+		{
+			"email": "emma.jones@example.com",
+			"plaintext_password": "letmein"
+		},
+		{
+			"email": "frank.miller@example.com",
+			"plaintext_password": "admin"
+		},
+		{
+			"email": "grace.davis@example.com",
+			"plaintext_password": "123456"
+		},
+		{
+			"email": "henry.wilson@example.com",
+			"plaintext_password": "password"
+		},
+		{
+			"email": "irene.moore@example.com",
+			"plaintext_password": "qwerty"
+		},
+		{
+			"email": "jack.taylor@example.com",
+			"plaintext_password": "abc123"
+		}
+	]
+}
