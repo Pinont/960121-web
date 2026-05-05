@@ -1,0 +1,406 @@
+/**
+ * CONSOLIDATED CHECKOUT SERVICE
+ * Routes + Controller + Service + Utilities in one file
+ * Handles all checkout operations: validation, order creation, payment processing
+ */
+
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const router = express.Router();
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const ORDERS_DATA_PATH = path.join(__dirname, '../data/orders.json');
+const PRODUCTS_DATA_PATH = path.join(__dirname, '../data/products.json');
+
+// Validation regex patterns
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CREDIT_CARD_REGEX = /^[0-9]{16}$/; // 16-digit credit card number
+
+// ============================================================================
+// UTILITIES - Data Loading & Saving
+// ============================================================================
+
+function loadOrders() {
+  try {
+    if (!fs.existsSync(ORDERS_DATA_PATH)) {
+      fs.writeFileSync(ORDERS_DATA_PATH, JSON.stringify({ orders: [] }, null, 2), 'utf-8');
+    }
+    const rawData = fs.readFileSync(ORDERS_DATA_PATH, 'utf-8');
+    const data = JSON.parse(rawData);
+    return data.orders || [];
+  } catch (error) {
+    console.error('Error loading orders:', error.message);
+    throw new Error(`Failed to load orders data: ${error.message}`);
+  }
+}
+
+function saveOrders(orders) {
+  try {
+    const data = { orders };
+    fs.writeFileSync(ORDERS_DATA_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    return true;
+  } catch (error) {
+    console.error('Error saving orders:', error.message);
+    throw new Error(`Failed to save orders data: ${error.message}`);
+  }
+}
+
+function loadProducts() {
+  try {
+    const rawData = fs.readFileSync(PRODUCTS_DATA_PATH, 'utf-8');
+    const products = JSON.parse(rawData);
+    return Array.isArray(products) ? products : [];
+  } catch (error) {
+    console.error('Error loading products:', error.message);
+    throw new Error(`Failed to load products data: ${error.message}`);
+  }
+}
+
+// ============================================================================
+// SERVICE - Business Logic (CheckoutService Class)
+// ============================================================================
+
+class CheckoutService {
+  constructor() {
+    this.orders = loadOrders();
+    this.products = loadProducts();
+  }
+
+  /**
+   * Validates cart items structure
+   * @param {Object} cart - Cart object with product IDs as keys and quantities as values
+   * @returns {Object} - { valid: boolean, errors: array }
+   */
+  validateCartItems(cart) {
+    const errors = [];
+
+    if (!cart || typeof cart !== 'object' || Object.keys(cart).length === 0) {
+      errors.push('Cart is empty');
+      return { valid: false, errors };
+    }
+
+    for (const [productId, item] of Object.entries(cart)) {
+      if (!item.quantity || typeof item.quantity !== 'number' || item.quantity < 1) {
+        errors.push(`Invalid quantity for product ${productId}`);
+      }
+
+      const product = this.products.find(p => p.id == productId);
+      if (!product) {
+        errors.push(`Product ${productId} not found in catalog`);
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  /**
+   * Validates email format
+   * @param {string} email - Email address to validate
+   * @returns {Object} - { valid: boolean, error: string }
+   */
+  validateEmail(email) {
+    if (!email || typeof email !== 'string') {
+      return { valid: false, error: 'Email is required' };
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return { valid: false, error: 'Invalid email format' };
+    }
+
+    return { valid: true, error: null };
+  }
+
+  /**
+   * Validates 16-digit credit card number
+   * @param {string} cardNumber - Credit card number
+   * @returns {Object} - { valid: boolean, error: string }
+   */
+  validateCreditCard(cardNumber) {
+    if (!cardNumber || typeof cardNumber !== 'string') {
+      return { valid: false, error: 'Credit card number is required' };
+    }
+
+    // Remove spaces and dashes if present
+    const sanitized = cardNumber.replace(/[\s-]/g, '');
+
+    if (!CREDIT_CARD_REGEX.test(sanitized)) {
+      return { valid: false, error: 'Credit card must be 16 digits' };
+    }
+
+    return { valid: true, error: null };
+  }
+
+  /**
+   * Calculates total price from cart
+   * @param {Object} cart - Cart object
+   * @returns {Object} - { total: number, itemsWithPrice: array, error: string }
+   */
+  calculateTotal(cart) {
+    try {
+      let total = 0;
+      const itemsWithPrice = [];
+
+      for (const [productId, item] of Object.entries(cart)) {
+        const product = this.products.find(p => p.id == productId);
+        if (!product) {
+          return {
+            total: 0,
+            itemsWithPrice: [],
+            error: `Product ${productId} not found`,
+          };
+        }
+
+        const itemTotal = product.price * item.quantity;
+        total += itemTotal;
+
+        itemsWithPrice.push({
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          quantity: item.quantity,
+          subtotal: itemTotal,
+        });
+      }
+
+      return { total, itemsWithPrice, error: null };
+    } catch (error) {
+      return {
+        total: 0,
+        itemsWithPrice: [],
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Creates and saves a new order
+   * @param {Object} orderData - Order details
+   * @returns {Object} - { success: boolean, orderId: string, error: string }
+   */
+  createOrder(orderData) {
+    try {
+      const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const timestamp = new Date().toISOString();
+
+      // Mask sensitive data before storing
+      const maskedCardNumber = orderData.cardNumber
+        .slice(-4)
+        .padStart(orderData.cardNumber.length, '*');
+
+      const order = {
+        orderId,
+        email: orderData.email,
+        cardNumberLast4: orderData.cardNumber.slice(-4),
+        items: orderData.items,
+        total: orderData.total,
+        status: 'completed',
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+
+      // Reload orders to ensure we have latest data
+      this.orders = loadOrders();
+      this.orders.push(order);
+
+      // Try to save the order
+      saveOrders(this.orders);
+
+      return { success: true, orderId, error: null };
+    } catch (error) {
+      console.error('Error creating order:', error);
+      return { success: false, orderId: null, error: error.message };
+    }
+  }
+}
+
+// ============================================================================
+// MIDDLEWARE - Token Verification
+// ============================================================================
+
+function verifyToken(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authorization header missing. Please login first.',
+      });
+    }
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid authorization header format',
+      });
+    }
+
+    // For now, we just verify the token exists
+    // Full JWT verification would be done here with the auth module
+    const token = parts[1];
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token. Please login again.',
+      });
+    }
+
+    req.token = token;
+    next();
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed',
+    });
+  }
+}
+
+// ============================================================================
+// CONTROLLER - Request Handlers
+// ============================================================================
+
+const checkoutService = new CheckoutService();
+
+async function handleCheckout(req, res, next) {
+  try {
+    const { cart, email, cardNumber } = req.body;
+
+    // Initialize error object to track all validation errors
+    const fieldErrors = {};
+
+    // ========== VALIDATION STEP 1: Validate Cart Items ==========
+    const cartValidation = checkoutService.validateCartItems(cart);
+    if (!cartValidation.valid) {
+      fieldErrors.cart = cartValidation.errors;
+    }
+
+    // ========== VALIDATION STEP 2: Validate Email ==========
+    const emailValidation = checkoutService.validateEmail(email);
+    if (!emailValidation.valid) {
+      fieldErrors.email = emailValidation.error;
+    }
+
+    // ========== VALIDATION STEP 3: Validate Credit Card ==========
+    const cardValidation = checkoutService.validateCreditCard(cardNumber);
+    if (!cardValidation.valid) {
+      fieldErrors.cardNumber = cardValidation.error;
+    }
+
+    // If any validation errors, return 400 with field-specific errors
+    // Cart NOT cleared on frontend
+    if (Object.keys(fieldErrors).length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed. Please check the errors below.',
+        errors: fieldErrors,
+      });
+    }
+
+    // ========== VALIDATION STEP 4: Calculate Total ==========
+    const totalResult = checkoutService.calculateTotal(cart);
+    if (totalResult.error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to calculate cart total',
+        errors: { cart: totalResult.error },
+      });
+    }
+
+    // ========== TRY-CATCH: Save Order ==========
+    try {
+      const orderResult = checkoutService.createOrder({
+        email,
+        cardNumber,
+        items: totalResult.itemsWithPrice,
+        total: totalResult.total,
+      });
+
+      if (!orderResult.success) {
+        // If order save fails, return 400 with error
+        // Cart NOT cleared on frontend
+        return res.status(400).json({
+          success: false,
+          message: 'Failed to save order. Please try again.',
+          errors: { order: orderResult.error },
+        });
+      }
+
+      // ========== SUCCESS: Order Created ==========
+      return res.status(201).json({
+        success: true,
+        message: 'Order created successfully!',
+        data: {
+          orderId: orderResult.orderId,
+          email,
+          total: totalResult.total,
+          itemCount: Object.keys(cart).length,
+          items: totalResult.itemsWithPrice,
+        },
+      });
+    } catch (saveError) {
+      console.error('Order save error:', saveError);
+      // If save fails, return 400 with error message
+      // Cart NOT cleared on frontend
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to save order due to a system error. Your cart has been preserved.',
+        errors: { order: saveError.message },
+      });
+    }
+  } catch (error) {
+    console.error('Checkout error:', error);
+    next(error);
+  }
+}
+
+// ============================================================================
+// ROUTES
+// ============================================================================
+
+/**
+ * POST /api/checkout
+ * Handles checkout process with validation and order creation
+ * 
+ * Request body:
+ * {
+ *   "cart": { "1": { "quantity": 2 }, "3": { "quantity": 1 } },
+ *   "email": "user@example.com",
+ *   "cardNumber": "1234567890123456"
+ * }
+ * 
+ * Response (Success - 201):
+ * {
+ *   "success": true,
+ *   "message": "Order created successfully!",
+ *   "data": {
+ *     "orderId": "ORD-...",
+ *     "email": "user@example.com",
+ *     "total": 350.00,
+ *     "itemCount": 2,
+ *     "items": [...]
+ *   }
+ * }
+ * 
+ * Response (Validation Error - 400):
+ * {
+ *   "success": false,
+ *   "message": "Validation failed. Please check the errors below.",
+ *   "errors": {
+ *     "email": "Invalid email format",
+ *     "cardNumber": "Credit card must be 16 digits"
+ *   }
+ * }
+ */
+router.post('/', verifyToken, handleCheckout);
+
+// ============================================================================
+// EXPORT
+// ============================================================================
+
+module.exports = router;

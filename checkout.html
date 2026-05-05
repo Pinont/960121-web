@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Checkout - Stylish Shoes Online Store</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="author" content="TemplatesJungle">
+  <meta name="keywords" content="Online Store">
+  <meta name="description" content="Stylish - Shoes Online Store HTML Template">
+
+  <link rel="stylesheet" href="css/vendor.css">
+  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,900;1,900&family=Source+Sans+Pro:wght@400;600;700;900&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* Font rendering fixes */
+    body, h1, h2, h3, h4, h5, h6, p, label, button, input, select, textarea {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .card-title {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      letter-spacing: -0.3px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Toast Notification -->
+  <div id="toast-notification" class="toast-notification" style="display: none;">
+    <div class="toast-content">
+      <span class="toast-icon">✓</span>
+      <span id="toast-message">Item added to cart!</span>
+    </div>
+  </div>
+
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol xmlns="http://www.w3.org/2000/svg" id="shopping-carriage" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M5 22H19C20.103 22 21 21.103 21 20V9C21 8.73478 20.8946 8.48043 20.7071 8.29289C20.5196 8.10536 20.2652 8 20 8H17V7C17 4.243 14.757 2 12 2C9.243 2 7 4.243 7 7V8H4C3.73478 8 3.48043 8.10536 3.29289 8.29289C3.10536 8.48043 3 8.73478 3 9V20C3 21.103 3.897 22 5 22ZM9 7C9 5.346 10.346 4 12 4C13.654 4 15 5.346 15 7V8H9V7ZM5 10H7V12H9V10H15V12H17V10H19L19.002 20H5V10Z"
+        fill="black" />
+    </symbol>
+    <symbol xmlns="http://www.w3.org/2000/svg" id="shopping-cart" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M21 4H2V6H4.3L7.582 15.025C7.79362 15.6029 8.1773 16.1021 8.68134 16.4552C9.18539 16.8083 9.78556 16.9985 10.401 17H19V15H10.401C9.982 15 9.604 14.735 9.461 14.342L8.973 13H18.246C19.136 13 19.926 12.402 20.169 11.549L21.962 5.275C22.0039 5.12615 22.0109 4.96962 21.9823 4.81763C21.9537 4.66565 21.8904 4.52234 21.7973 4.39889C21.7041 4.27544 21.5837 4.1752 21.4454 4.106C21.3071 4.0368 21.1546 4.00053 21 4ZM18.246 11H8.246L6.428 6H19.675L18.246 11Z"
+        fill="black" />
+      <path
+        d="M10.5 21C11.3284 21 12 20.3284 12 19.5C12 18.6716 11.3284 18 10.5 18C9.67157 18 9 18.6716 9 19.5C9 20.3284 9.67157 21 10.5 21Z"
+        fill="black" />
+      <path
+        d="M16.5 21C17.3284 21 18 20.3284 18 19.5C18 18.6716 17.3284 18 16.5 18C15.6716 18 15 18.6716 15 19.5C15 20.3284 15.6716 21 16.5 21Z"
+        fill="black" />
+    </symbol>
+    <symbol xmlns="http://www.w3.org/2000/svg" id="user" viewBox="0 0 24 24">
+      <path fill="currentColor"
+        d="M12 2a5 5 0 1 0 5 5a5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3a3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z" />
+    </symbol>
+    <symbol xmlns="http://www.w3.org/2000/svg" id="arrow-right" viewBox="0 0 24 24">
+      <path fill="currentColor"
+        d="M13.3 17.275q-.3-.3-.288-.725t.313-.725L16.15 13H5q-.425 0-.713-.288T4 12q0-.425.288-.713T5 11h11.15L13.3 8.15q-.3-.3-.3-.713t.3-.712q.3-.3.713-.3t.712.3L19.3 11.3q.15.15.213.325t.062.375q0 .2-.063.375t-.212.325l-4.6 4.6q-.275.275-.687.275t-.713-.3Z" />
+    </symbol>
+  </svg>
+
+  <!-- Header -->
+  <header id="header" class="site-header text-black">
+    <nav id="header-nav" class="navbar navbar-expand-lg">
+      <div class="container-lg">
+        <a class="navbar-brand" href="index.html">
+          <img src="images/main-logo.png" class="logo" alt="logo">
+        </a>
+        <button class="navbar-toggler d-flex d-lg-none order-3 border-0 p-1 ms-2" type="button" data-bs-toggle="offcanvas"
+          data-bs-target="#bdNavbar" aria-controls="bdNavbar" aria-expanded="false" aria-label="Toggle navigation">
+          <svg class="navbar-icon">
+            <use xlink:href="#shopping-carriage"></use>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Checkout Section -->
+  <section class="checkout-page py-5 my-5">
+    <div class="container">
+      <h1 class="text-center mb-5 display-5">Checkout</h1>
+
+      <div class="row g-4">
+        <!-- Left Column: Cart Summary -->
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light border-0 p-4">
+              <h2 class="card-title m-0">Order Summary</h2>
+            </div>
+            <div class="card-body p-4">
+              <div id="cart-items-checkout" class="mb-4">
+                <!-- Cart items will be rendered here -->
+              </div>
+
+              <hr>
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <strong>Subtotal:</strong>
+                <span id="checkout-subtotal">$0.00</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <strong>Shipping:</strong>
+                <span id="checkout-shipping">Free</span>
+              </div>
+
+              <hr>
+
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="m-0"><strong>Total:</strong></h5>
+                <h5 class="m-0"><strong id="checkout-total">$0.00</strong></h5>
+              </div>
+
+              <a href="index.html" class="btn btn-outline-secondary btn-sm w-100">
+                ← Continue Shopping
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Checkout Form -->
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light border-0 p-4">
+              <h2 class="card-title m-0">Billing Information</h2>
+            </div>
+            <div class="card-body p-4">
+              <!-- Error Messages -->
+              <div id="checkout-error" class="alert alert-danger d-none" role="alert">
+                <!-- Error message will be shown here -->
+              </div>
+
+              <!-- Success Messages -->
+              <div id="checkout-success" class="alert alert-success d-none" role="alert">
+                <!-- Success message will be shown here -->
+              </div>
+
+              <!-- Checkout Form -->
+              <form id="checkout-form" class="needs-validation">
+                <!-- Email Field -->
+                <div class="mb-3">
+                  <label for="checkout-email" class="form-label fw-bold">Email Address</label>
+                  <input type="email" class="form-control" id="checkout-email" name="email" placeholder="example@email.com" required>
+                  <small id="email-error" class="d-block text-danger mt-1" style="display: none;"></small>
+                </div>
+
+                <!-- Credit Card Field -->
+                <div class="mb-3">
+                  <label for="checkout-card" class="form-label fw-bold">Credit Card Number</label>
+                  <input type="text" class="form-control" id="checkout-card" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                  <small class="text-muted d-block mt-1">16 digits only (numbers only)</small>
+                  <small id="card-error" class="d-block text-danger mt-1" style="display: none;"></small>
+                </div>
+
+                <!-- Card Details Row -->
+                <div class="row">
+                  <div class="col-6">
+                    <div class="mb-3">
+                      <label for="checkout-expiry" class="form-label fw-bold">Expiry Date</label>
+                      <input type="text" class="form-control" id="checkout-expiry" name="expiry" placeholder="MM/YY" required>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="mb-3">
+                      <label for="checkout-cvv" class="form-label fw-bold">CVV</label>
+                      <input type="text" class="form-control" id="checkout-cvv" name="cvv" placeholder="123" maxlength="3" required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cardholder Name -->
+                <div class="mb-4">
+                  <label for="checkout-name" class="form-label fw-bold">Cardholder Name</label>
+                  <input type="text" class="form-control" id="checkout-name" name="cardholderName" placeholder="John Doe" required>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="checkout-btn" class="btn btn-red btn-medium text-uppercase w-100 hvr-sweep-to-right">
+                  Complete Purchase
+                </button>
+
+                <p class="text-center text-muted small mt-3">
+                  Your payment information is secure and encrypted
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="footer" class="py-5 border-top mt-5">
+    <div class="container-lg">
+      <div class="row">
+        <div class="col-lg-2 pb-3">
+          <div class="footer-menu">
+            <h5 class="widget-title pb-2">Info</h5>
+            <ul class="menu-list list-unstyled">
+              <li class="pb-2">
+                <a href="#">Track Your Order</a>
+              </li>
+              <li class="pb-2">
+                <a href="index.html">Our Blog</a>
+              </li>
+              <li class="pb-2">
+                <a href="#">Privacy policy</a>
+              </li>
+              <li class="pb-2">
+                <a href="#">Shipping</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-lg-10 pb-3 text-center">
+          <p class="text-muted">
+            <strong>TemplatesJungle</strong> - Free HTML5 Templates. Licensed for personal and commercial use.
+            <a href="https://www.templatesjungle.com/">Visit TemplatesJungle</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/jquery-1.11.0.min.js"></script>
+  <script src="css/vendor.js"></script>
+
+  <script>
+    // ============================================================================
+    // CHECKOUT PAGE FUNCTIONALITY
+    // ============================================================================
+
+    /**
+     * Load cart data from localStorage and display it
+     */
+    function loadCheckoutCart() {
+      const cartData = localStorage.getItem('stylish-cart');
+      let cart = {};
+
+      if (cartData) {
+        try {
+          cart = JSON.parse(cartData);
+        } catch (e) {
+          console.error('Error parsing cart:', e);
+          cart = {};
+        }
+      }
+
+      // If cart is empty, redirect to index
+      if (Object.keys(cart).length === 0) {
+        document.getElementById('cart-items-checkout').innerHTML =
+          '<div class="alert alert-warning"><strong>Your cart is empty!</strong> <a href="index.html">Continue shopping</a></div>';
+        document.getElementById('checkout-btn').disabled = true;
+        return null;
+      }
+
+      return cart;
+    }
+
+    /**
+     * Fetch products and render cart items
+     */
+    async function renderCheckoutCart() {
+      const cart = loadCheckoutCart();
+      if (!cart) return;
+
+      try {
+        // Fetch products from the API
+        const response = await fetch('http://localhost:3000/api/products');
+        const result = await response.json();
+        const products = result.data || result;
+
+        let cartHTML = '';
+        let total = 0;
+
+        for (const [productId, item] of Object.entries(cart)) {
+          const product = products.find(p => p.id == productId);
+          if (product) {
+            const subtotal = product.price * item.quantity;
+            total += subtotal;
+
+            cartHTML += `
+              <div class="checkout-item mb-3 pb-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6 class="mb-1">${product.title}</h6>
+                    <small class="text-muted">Qty: ${item.quantity}</small>
+                  </div>
+                  <div class="text-end">
+                    <p class="m-0 fw-bold">$${subtotal.toFixed(2)}</p>
+                    <small class="text-muted">$${product.price} each</small>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        document.getElementById('cart-items-checkout').innerHTML = cartHTML;
+        document.getElementById('checkout-subtotal').textContent = `$${total.toFixed(2)}`;
+        document.getElementById('checkout-total').textContent = `$${total.toFixed(2)}`;
+
+        // Store cart for submission
+        window.checkoutCart = cart;
+      } catch (error) {
+        console.error('Error rendering checkout cart:', error);
+        document.getElementById('cart-items-checkout').innerHTML =
+          '<div class="alert alert-danger">Error loading cart items. Please try again.</div>';
+      }
+    }
+
+    /**
+     * Handle form submission
+     */
+    async function handleCheckoutSubmit(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('checkout-email').value.trim();
+      const cardNumber = document.getElementById('checkout-card').value.replace(/\s/g, '');
+      const cart = window.checkoutCart;
+
+      // Reset error messages
+      document.getElementById('checkout-error').classList.add('d-none');
+      document.getElementById('checkout-success').classList.add('d-none');
+
+      // Get auth token from localStorage
+      const authToken = localStorage.getItem('authToken');
+
+      if (!authToken) {
+        showError('You must be logged in to proceed with checkout. Please <a href="index.html">login first</a>.');
+        return;
+      }
+
+      try {
+        const checkoutBtn = document.getElementById('checkout-btn');
+        checkoutBtn.disabled = true;
+        checkoutBtn.textContent = 'Processing...';
+
+        const response = await fetch('http://localhost:3000/api/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            cart,
+            email,
+            cardNumber,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          // Handle validation errors - DO NOT clear cart
+          if (result.errors) {
+            let errorMessage = result.message || 'Validation failed. Please check your information.';
+            if (result.errors.email) {
+              errorMessage += `<br>• Email: ${result.errors.email}`;
+            }
+            if (result.errors.cardNumber) {
+              errorMessage += `<br>• Card: ${result.errors.cardNumber}`;
+            }
+            if (result.errors.cart) {
+              const cartErrors = Array.isArray(result.errors.cart)
+                ? result.errors.cart.join('<br>• ')
+                : result.errors.cart;
+              errorMessage += `<br>• Cart: ${cartErrors}`;
+            }
+            showError(errorMessage);
+          } else {
+            showError(result.message || 'Checkout failed. Please try again.');
+          }
+
+          checkoutBtn.disabled = false;
+          checkoutBtn.textContent = 'Complete Purchase';
+          return;
+        }
+
+        // SUCCESS: Order created, now clear cart
+        localStorage.removeItem('stylish-cart');
+
+        // Show success message with order details
+        const orderData = result.data;
+        
+        // Store order data in sessionStorage for card-detail page
+        sessionStorage.setItem('orderConfirm', JSON.stringify(orderData));
+
+        const successMessage = `
+          <strong>✓ Order Placed Successfully!</strong><br>
+          Order ID: ${orderData.orderId}<br>
+          Total: $${orderData.total.toFixed(2)}<br>
+          <small>Confirmation email sent to: ${orderData.email}</small>
+        `;
+
+        document.getElementById('checkout-success').innerHTML = successMessage;
+        document.getElementById('checkout-success').classList.remove('d-none');
+
+        // Reset form
+        document.getElementById('checkout-form').reset();
+
+        // Redirect to order confirmation after 3 seconds
+        setTimeout(() => {
+          window.location.href = 'card-detail.html?orderId=' + encodeURIComponent(orderData.orderId);
+        }, 3000);
+      } catch (error) {
+        console.error('Checkout error:', error);
+        showError('An unexpected error occurred. Your cart has been preserved. Please try again.');
+      }
+    }
+
+    /**
+     * Display error message
+     */
+    function showError(message) {
+      const errorDiv = document.getElementById('checkout-error');
+      errorDiv.innerHTML = message;
+      errorDiv.classList.remove('d-none');
+      errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    /**
+     * Format credit card input
+     */
+    document.getElementById('checkout-card').addEventListener('input', function (e) {
+      let value = e.target.value.replace(/\s/g, '');
+      if (!/^\d*$/.test(value)) {
+        e.target.value = e.target.value.replace(/[^\d]/g, '');
+        return;
+      }
+      if (value.length > 16) {
+        e.target.value = value.slice(0, 16);
+        return;
+      }
+      // Add spaces every 4 digits
+      e.target.value = value.replace(/(\d{4})/g, '$1 ').trim();
+    });
+
+    /**
+     * Format expiry date (MM/YY)
+     */
+    document.getElementById('checkout-expiry').addEventListener('input', function (e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length >= 2) {
+        value = value.slice(0, 2) + '/' + value.slice(2, 4);
+      }
+      e.target.value = value;
+    });
+
+    /**
+     * CVV input validation (numbers only)
+     */
+    document.getElementById('checkout-cvv').addEventListener('input', function (e) {
+      e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    /**
+     * Initialize on page load
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCheckoutCart();
+
+      // Attach form submission
+      document.getElementById('checkout-form').addEventListener('submit', handleCheckoutSubmit);
+    });
+  </script>
+</body>
+
+</html>

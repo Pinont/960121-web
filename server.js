@@ -3,9 +3,10 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-// Import consolidated routes (auth + products)
+// Import consolidated routes (auth + products + checkout)
 const productsRoutes = require('./src/products');
 const authRoutes = require('./src/auth');
+const checkoutRoutes = require('./src/checkout');
 
 // Initialize Express app
 const app = express();
@@ -29,6 +30,7 @@ app.get('/auth.js', (req, res) => {
 // Routes
 app.use('/api/products', productsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/checkout', checkoutRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

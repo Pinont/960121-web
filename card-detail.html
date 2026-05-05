@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Payment Details - Stylish Shoes Online Store</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="author" content="TemplatesJungle">
+  <meta name="keywords" content="Online Store">
+  <meta name="description" content="Stylish - Shoes Online Store HTML Template">
+
+  <link rel="stylesheet" href="css/vendor.css">
+  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,900;1,900&family=Source+Sans+Pro:wght@400;600;700;900&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* Font rendering fixes */
+    body, h1, h2, h3, h4, h5, h6, p, label, button, input, select, textarea {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .card-title {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      letter-spacing: -0.3px;
+    }
+
+    /* Additional styling for card detail page */
+    .payment-status {
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #ce071e 0%, #a90517 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: white;
+      animation: pulse 0.6s ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .card-detail-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .card-label {
+      font-weight: 600;
+      color: #555;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-value {
+      color: #333;
+      font-size: 1.1rem;
+      margin-top: 5px;
+    }
+
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+
+    .timeline-item {
+      padding-left: 60px;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      width: 20px;
+      height: 20px;
+      background: #ce071e;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px #ce071e;
+    }
+
+    .timeline-item::after {
+      content: '';
+      position: absolute;
+      left: 24px;
+      top: 30px;
+      width: 2px;
+      height: 60px;
+      background: #ddd;
+    }
+
+    .timeline-item:last-child::after {
+      display: none;
+    }
+
+    .timeline-item h6 {
+      margin: 0 0 5px 0;
+      font-weight: 600;
+    }
+
+    .timeline-item small {
+      color: #999;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header id="header" class="site-header text-black">
+    <nav id="header-nav" class="navbar navbar-expand-lg">
+      <div class="container-lg">
+        <a class="navbar-brand" href="index.html">
+          <img src="images/main-logo.png" class="logo" alt="logo">
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Payment Confirmation Section -->
+  <section class="payment-detail-page py-5 my-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <!-- Success Status -->
+          <div class="payment-status">
+            <div class="success-icon">✓</div>
+            <h1 class="display-5 mb-2 text-success">Payment Successful!</h1>
+            <p class="lead text-muted mb-5">Your order has been successfully placed and is being processed.</p>
+          </div>
+
+          <!-- Order Details Card -->
+          <div class="card border-0 shadow-sm mb-5">
+            <div class="card-header bg-light border-0 p-4">
+              <h2 class="card-title m-0">Order Details</h2>
+            </div>
+            <div class="card-body p-4">
+              <!-- Order ID -->
+              <div class="card-detail-item">
+                <div class="card-label">Order ID</div>
+                <div class="card-value" id="order-id">Loading...</div>
+              </div>
+
+              <!-- Order Date -->
+              <div class="card-detail-item">
+                <div class="card-label">Order Date</div>
+                <div class="card-value" id="order-date">Loading...</div>
+              </div>
+
+              <!-- Total Amount -->
+              <div class="card-detail-item">
+                <div class="card-label">Total Amount</div>
+                <div class="card-value fw-bold" id="order-total">$0.00</div>
+              </div>
+
+              <!-- Payment Method -->
+              <div class="card-detail-item">
+                <div class="card-label">Payment Method</div>
+                <div class="card-value" id="payment-method">Credit Card</div>
+              </div>
+
+              <!-- Email -->
+              <div class="card-detail-item">
+                <div class="card-label">Email Confirmation Sent To</div>
+                <div class="card-value" id="order-email">Loading...</div>
+              </div>
+
+              <!-- Items Count -->
+              <div class="card-detail-item">
+                <div class="card-label">Number of Items</div>
+                <div class="card-value" id="order-items">Loading...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Status Timeline -->
+          <div class="card border-0 shadow-sm mb-5">
+            <div class="card-header bg-light border-0 p-4">
+              <h2 class="card-title m-0">Order Status</h2>
+            </div>
+            <div class="card-body p-4">
+              <div class="timeline">
+                <div class="timeline-item">
+                  <h6>✓ Order Placed</h6>
+                  <small id="status-placed">Today</small>
+                </div>
+                <div class="timeline-item">
+                  <h6>Preparing Items</h6>
+                  <small>We're getting your items ready for shipment</small>
+                </div>
+                <div class="timeline-item">
+                  <h6>Shipped</h6>
+                  <small>You'll receive a tracking number via email</small>
+                </div>
+                <div class="timeline-item">
+                  <h6>Delivered</h6>
+                  <small>Expected delivery date will be provided</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- What's Next Section -->
+          <div class="card border-0 shadow-sm mb-5">
+            <div class="card-header bg-light border-0 p-4">
+              <h2 class="card-title m-0">What's Next?</h2>
+            </div>
+            <div class="card-body p-4">
+              <div class="mb-3">
+                <h6 class="fw-bold mb-2">📧 Check Your Email</h6>
+                <p>A confirmation email with order details has been sent. Check your inbox and spam folder if needed.</p>
+              </div>
+
+              <div class="mb-3">
+                <h6 class="fw-bold mb-2">🚚 Track Your Order</h6>
+                <p>Once your items ship, you'll receive a tracking number to monitor delivery progress.</p>
+              </div>
+
+              <div class="mb-3">
+                <h6 class="fw-bold mb-2">❓ Need Help?</h6>
+                <p>If you have any questions, please contact our <a href="#">support team</a> or visit our <a href="#">FAQ page</a>.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="row gap-3">
+            <div class="col-md-6">
+              <a href="index.html" class="btn btn-red btn-medium text-uppercase w-100 hvr-sweep-to-right">
+                Continue Shopping
+              </a>
+            </div>
+            <div class="col-md-6">
+              <a href="#" class="btn btn-outline-secondary btn-medium text-uppercase w-100">
+                Download Invoice
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="footer" class="py-5 border-top mt-5">
+    <div class="container-lg">
+      <div class="row">
+        <div class="col-lg-2 pb-3">
+          <div class="footer-menu">
+            <h5 class="widget-title pb-2">Info</h5>
+            <ul class="menu-list list-unstyled">
+              <li class="pb-2">
+                <a href="#">Track Your Order</a>
+              </li>
+              <li class="pb-2">
+                <a href="index.html">Our Blog</a>
+              </li>
+              <li class="pb-2">
+                <a href="#">Privacy policy</a>
+              </li>
+              <li class="pb-2">
+                <a href="#">Shipping</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-lg-10 pb-3 text-center">
+          <p class="text-muted">
+            <strong>TemplatesJungle</strong> - Free HTML5 Templates. Licensed for personal and commercial use.
+            <a href="https://www.templatesjungle.com/">Visit TemplatesJungle</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/jquery-1.11.0.min.js"></script>
+  <script src="css/vendor.js"></script>
+
+  <script>
+    /**
+     * Display order details from URL parameter
+     */
+    function displayOrderDetails() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('orderId');
+
+      if (!orderId) {
+        document.getElementById('order-id').textContent = 'N/A';
+        document.getElementById('order-date').textContent = new Date().toLocaleDateString();
+        return;
+      }
+
+      // Display order info from parameter or localStorage
+      const cartData = sessionStorage.getItem('orderConfirm') || localStorage.getItem('orderConfirm');
+      if (cartData) {
+        try {
+          const orderData = JSON.parse(cartData);
+          document.getElementById('order-id').textContent = orderData.orderId || orderId;
+          document.getElementById('order-date').textContent = new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          document.getElementById('order-total').textContent = `$${orderData.total?.toFixed(2) || '0.00'}`;
+          document.getElementById('order-email').textContent = orderData.email || 'Not provided';
+          document.getElementById('order-items').textContent = orderData.itemCount || '0';
+          document.getElementById('status-placed').textContent = new Date().toLocaleDateString();
+        } catch (e) {
+          console.error('Error parsing order data:', e);
+          document.getElementById('order-id').textContent = orderId;
+        }
+      } else {
+        document.getElementById('order-id').textContent = orderId;
+        document.getElementById('order-date').textContent = new Date().toLocaleDateString();
+      }
+    }
+
+    /**
+     * Initialize on page load
+     */
+    document.addEventListener('DOMContentLoaded', displayOrderDetails);
+  </script>
+</body>
+
+</html>

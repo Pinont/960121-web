@@ -313,6 +313,25 @@ function handleAddToCartClick(event) {
     // Optional: prevent default behavior if the button is an <a> tag or inside a form
     event.preventDefault();
 
+    // ============================================================================
+    // STEP 4A: CHECK AUTHENTICATION - USER MUST BE LOGGED IN TO ADD TO CART
+    // ============================================================================
+    
+    // Check if AuthManager exists and if user is authenticated
+    if (typeof AuthManager === 'undefined' || !AuthManager.isAuthenticated()) {
+        showToast('⚠ Please log in first to add items to cart');
+        
+        // Try to open login modal if it exists
+        const loginModal = document.getElementById('modallogin');
+        if (loginModal) {
+            const bootstrapModal = new (window.bootstrap ? window.bootstrap.Modal : null)(loginModal);
+            if (bootstrapModal) {
+                bootstrapModal.show();
+            }
+        }
+        return; // Exit without adding to cart
+    }
+
     // Step 5: Grab the product ID from the 'data-id' attribute of the button.
     // This attribute is set in the renderUI template:
     //   <button class="add-to-cart" data-id="${product.id}">
