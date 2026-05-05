@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Stylish Shoes</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .register-container {
+      max-width: 450px;
+      width: 100%;
+    }
+
+    .register-card {
+      background: white;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .register-header {
+      background: linear-gradient(135deg, #ce071e 0%, #a90517 100%);
+      padding: 40px 30px;
+      text-align: center;
+      color: white;
+    }
+
+    .register-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.5px;
+    }
+
+    .register-header p {
+      font-size: 14px;
+      margin: 0;
+      opacity: 0.95;
+    }
+
+    .register-body {
+      padding: 40px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #333;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-control {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      border-color: #ce071e;
+      box-shadow: 0 0 0 3px rgba(206, 7, 30, 0.1);
+    }
+
+    .form-control.is-invalid {
+      border-color: #dc3545;
+    }
+
+    .error-message {
+      font-size: 13px;
+      color: #dc3545;
+      margin-top: 6px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    /* Password strength indicator */
+    .password-strength {
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .strength-bar {
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .strength-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease, background-color 0.3s ease;
+      background: #dc3545;
+    }
+
+    .strength-text {
+      color: #666;
+    }
+
+    .strength-requirements {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0 0;
+    }
+
+    .requirement {
+      font-size: 12px;
+      padding: 4px 0;
+      color: #999;
+      transition: all 0.3s ease;
+    }
+
+    .requirement.met {
+      color: #28a745;
+    }
+
+    .requirement::before {
+      content: '○ ';
+      margin-right: 6px;
+      font-weight: bold;
+    }
+
+    .requirement.met::before {
+      content: '✓ ';
+      color: #28a745;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ce071e 0%, #a90517 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(206, 7, 30, 0.3);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .login-link a {
+      color: #ce071e;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .login-link a:hover {
+      color: #a90517;
+    }
+
+    .alert {
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .alert-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .alert {
+      display: none;
+    }
+
+    .alert.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .loader {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .submit-btn.loading {
+      pointer-events: none;
+    }
+
+    .submit-btn.loading .loader {
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .submit-btn.loading span {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="register-container">
+    <div class="register-card">
+      <!-- Header -->
+      <div class="register-header">
+        <h1>Create Account</h1>
+        <p>Join Stylish today</p>
+      </div>
+
+      <!-- Body -->
+      <div class="register-body">
+        <!-- Success Alert -->
+        <div id="success-alert" class="alert alert-success" role="alert">
+          <strong>✓ Registration Successful!</strong>
+          <p id="success-message" class="mb-0">You can now log in with your email and password.</p>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="error-alert" class="alert alert-danger" role="alert">
+          <strong>✗ Registration Failed</strong>
+          <p id="error-message" class="mb-0"></p>
+        </div>
+
+        <!-- Registration Form -->
+        <form id="register-form" novalidate>
+          <!-- Name Field -->
+          <div class="form-group">
+            <label for="name" class="form-label">Full Name</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="name" 
+              name="name" 
+              placeholder="John Doe"
+              required
+            >
+            <div id="name-error" class="error-message"></div>
+          </div>
+
+          <!-- Email Field -->
+          <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <input 
+              type="email" 
+              class="form-control" 
+              id="email" 
+              name="email" 
+              placeholder="john@example.com"
+              required
+            >
+            <div id="email-error" class="error-message"></div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input 
+              type="password" 
+              class="form-control" 
+              id="password" 
+              name="password" 
+              placeholder="Enter a strong password"
+              required
+            >
+            <div id="password-error" class="error-message"></div>
+
+            <!-- Password Strength Indicator -->
+            <div class="password-strength" id="password-strength" style="display: none;">
+              <div class="strength-bar">
+                <div class="strength-fill" id="strength-fill"></div>
+              </div>
+              <div class="strength-text" id="strength-text">Password Strength: <strong id="strength-label">Weak</strong></div>
+              
+              <ul class="strength-requirements">
+                <li class="requirement" id="req-length">At least 8 characters</li>
+                <li class="requirement" id="req-uppercase">At least 1 uppercase letter (A-Z)</li>
+                <li class="requirement" id="req-special">At least 1 special character (!@#$%^&*)</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="submit-btn" id="submit-btn">
+            <div class="loader"></div>
+            <span>Register Now</span>
+          </button>
+
+          <!-- Login Link -->
+          <div class="login-link">
+            Already have an account? <a href="/login">Log in here</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================================
+    // PASSWORD VALIDATION
+    // ============================================================================
+
+    const PASSWORD_MIN_LENGTH = 8;
+    const SPECIAL_CHARS = /[!@#$%^&*]/;
+    const UPPERCASE_REGEX = /[A-Z]/;
+
+    function validatePassword(password) {
+      return {
+        length: password.length >= PASSWORD_MIN_LENGTH,
+        uppercase: UPPERCASE_REGEX.test(password),
+        special: SPECIAL_CHARS.test(password),
+      };
+    }
+
+    function isPasswordValid(password) {
+      const validation = validatePassword(password);
+      return validation.length && validation.uppercase && validation.special;
+    }
+
+    function getPasswordStrength(password) {
+      const validation = validatePassword(password);
+      const metRequirements = Object.values(validation).filter(Boolean).length;
+      
+      if (metRequirements === 0) return 'weak';
+      if (metRequirements === 1) return 'fair';
+      if (metRequirements === 2) return 'good';
+      return 'strong';
+    }
+
+    // ============================================================================
+    // UI UPDATES
+    // ============================================================================
+
+    function updatePasswordStrengthDisplay(password) {
+      const strengthContainer = document.getElementById('password-strength');
+      const validation = validatePassword(password);
+
+      if (password.length === 0) {
+        strengthContainer.style.display = 'none';
+        return;
+      }
+
+      strengthContainer.style.display = 'block';
+
+      // Update requirement indicators
+      document.getElementById('req-length').classList.toggle('met', validation.length);
+      document.getElementById('req-uppercase').classList.toggle('met', validation.uppercase);
+      document.getElementById('req-special').classList.toggle('met', validation.special);
+
+      // Update strength bar
+      const strength = getPasswordStrength(password);
+      const strengthFill = document.getElementById('strength-fill');
+      const strengthLabel = document.getElementById('strength-label');
+      const strengthMap = {
+        weak: { width: '25%', color: '#dc3545', label: 'Weak' },
+        fair: { width: '50%', color: '#ffc107', label: 'Fair' },
+        good: { width: '75%', color: '#17a2b8', label: 'Good' },
+        strong: { width: '100%', color: '#28a745', label: 'Strong' },
+      };
+
+      strengthFill.style.width = strengthMap[strength].width;
+      strengthFill.style.backgroundColor = strengthMap[strength].color;
+      strengthLabel.textContent = strengthMap[strength].label;
+    }
+
+    function showError(fieldId, message) {
+      const errorEl = document.getElementById(`${fieldId}-error`);
+      const inputEl = document.getElementById(fieldId);
+      errorEl.textContent = message;
+      errorEl.classList.add('show');
+      inputEl.classList.add('is-invalid');
+    }
+
+    function clearError(fieldId) {
+      const errorEl = document.getElementById(`${fieldId}-error`);
+      const inputEl = document.getElementById(fieldId);
+      errorEl.textContent = '';
+      errorEl.classList.remove('show');
+      inputEl.classList.remove('is-invalid');
+    }
+
+    // ============================================================================
+    // FORM VALIDATION & SUBMISSION
+    // ============================================================================
+
+    const form = document.getElementById('register-form');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submit-btn');
+    const successAlert = document.getElementById('success-alert');
+    const errorAlert = document.getElementById('error-alert');
+    const errorMessage = document.getElementById('error-message');
+
+    // Real-time password validation
+    passwordInput.addEventListener('input', () => {
+      clearError('password');
+      updatePasswordStrengthDisplay(passwordInput.value);
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      // Clear previous alerts
+      successAlert.classList.remove('show');
+      errorAlert.classList.remove('show');
+
+      // Validate name
+      if (!name) {
+        showError('name', 'Name is required');
+        return;
+      }
+      clearError('name');
+
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        showError('email', 'Please enter a valid email address');
+        return;
+      }
+      clearError('email');
+
+      // Validate password
+      if (!isPasswordValid(password)) {
+        const validation = validatePassword(password);
+        let message = 'Password must have: ';
+        if (!validation.length) message += '8+ characters, ';
+        if (!validation.uppercase) message += '1 uppercase letter, ';
+        if (!validation.special) message += '1 special character (!@#$%^&*), ';
+        showError('password', message.slice(0, -2));
+        return;
+      }
+      clearError('password');
+
+      // Submit form
+      try {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
+
+        const response = await fetch('http://127.0.0.1:3000/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, email, password }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          // Success
+          successAlert.classList.add('show');
+          form.reset();
+          updatePasswordStrengthDisplay('');
+          
+          // Redirect to main store after 2 seconds
+          setTimeout(() => {
+            window.location.href = '/index.html';
+          }, 2000);
+        } else {
+          // Error
+          errorMessage.textContent = result.message || 'Registration failed. Please try again.';
+          errorAlert.classList.add('show');
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('loading');
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        errorMessage.textContent = 'Network error. Please check your connection and try again.';
+        errorAlert.classList.add('show');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+      }
+    });
+  </script>
+</body>
+
+</html>

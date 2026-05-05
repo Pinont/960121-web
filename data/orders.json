@@ -1,3 +1,29 @@
 {
-  "orders": []
+  "orders": [
+    {
+      "orderId": "ORD-1777968287061-7fxjo2td1",
+      "email": "AAA@AAAA.A",
+      "cardNumberLast4": "3456",
+      "items": [
+        {
+          "id": 1,
+          "title": "AeroSwift Pro Runner",
+          "price": 120,
+          "quantity": 1,
+          "subtotal": 120
+        },
+        {
+          "id": 2,
+          "title": "Urban Street Sneaker",
+          "price": 85,
+          "quantity": 1,
+          "subtotal": 85
+        }
+      ],
+      "total": 205,
+      "status": "completed",
+      "createdAt": "2026-05-05T08:04:47.061Z",
+      "updatedAt": "2026-05-05T08:04:47.061Z"
+    }
+  ]
 }

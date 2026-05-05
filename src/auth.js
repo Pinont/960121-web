@@ -6,9 +6,11 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
+const { registerUser } = require('./register');
 
 const router = express.Router();
 
@@ -64,7 +66,17 @@ async function authenticateUser(email, password) {
       };
     }
 
-    const passwordMatch = compareMD5Password(password, user.password);
+    // Check if password is bcrypt hash (starts with $2a$, $2b$, or $2y$)
+    const isBcryptHash = user.password && /^\$2[aby]\$/.test(user.password);
+    let passwordMatch = false;
+
+    if (isBcryptHash) {
+      // Compare bcrypt hash
+      passwordMatch = await bcrypt.compare(password, user.password);
+    } else {
+      // Compare MD5 hash (legacy)
+      passwordMatch = compareMD5Password(password, user.password);
+    }
 
     if (!passwordMatch) {
       return {
@@ -77,10 +89,10 @@ async function authenticateUser(email, password) {
     return {
       success: true,
       user: {
-        id: user.username,
-        email: user.username,
-        firstName: user.first_name,
-        registrationDate: user.registration_date,
+        id: user.id || user.username,
+        email: user.email || user.username,
+        firstName: user.name || user.first_name,
+        registrationDate: user.registration_date || user.created_at,
       },
       message: 'Authentication successful',
     };
@@ -232,6 +244,30 @@ function getProfileHandler(req, res, next) {
   }
 }
 
+async function registerHandler(req, res, next) {
+  try {
+    const { name, email, password } = req.body;
+
+    const result = await registerUser(name, email, password);
+
+    if (!result.success) {
+      return res.status(result.code || 400).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    return res.status(result.code || 201).json({
+      success: true,
+      message: result.message,
+      user: result.user,
+    });
+  } catch (error) {
+    console.error('Registration endpoint error:', error);
+    next(error);
+  }
+}
+
 // ============================================================================
 // ROUTES
 // ============================================================================
@@ -247,6 +283,12 @@ router.post('/login', loginHandler);
  * Get authenticated user profile (requires valid JWT)
  */
 router.get('/profile', verifyToken, getProfileHandler);
+
+/**
+ * POST /api/auth/register
+ * Register a new user
+ */
+router.post('/register', registerHandler);
 
 // ============================================================================
 // BROWSER CLIENT - Frontend AuthManager

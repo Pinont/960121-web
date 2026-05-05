@@ -293,6 +293,12 @@
               <button type="button" id="modal-login-btn" class="btn btn-red hvr-sweep-to-right dark-sweep">Login</button>
               <button type="button" class="btn btn-outline-gray hvr-sweep-to-right dark-sweep" data-bs-dismiss="modal">Close</button>
             </div>
+            <div class="text-center mt-4">
+              <p class="text-muted mb-0">
+                Don't have an account? 
+                <a href="#" class="text-decoration-none fw-bold" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalregister" style="color: #ce071e;">Register here</a>
+              </p>
+            </div>
           </div>
 
           <!-- User Profile Section (shown when logged in) -->
@@ -317,6 +323,45 @@
       </div>
     </div>
   </div>
+
+  <!-- Registration Modal -->
+  <div class="modal fade" id="modalregister" tabindex="-1" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-fullscreen-md-down modal-md modal-dialog-centered" role="document">
+      <div class="modal-content p-4">
+        <div class="modal-header mx-auto border-0">
+          <h2 class="modal-title fs-3 fw-normal" id="modal-register-title">Register</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="register-form p-0">
+            <div class="col-lg-12 mx-auto">
+              <form id="modal-register-form">
+                <input type="text" name="name" id="modal-register-name" placeholder="Full Name *"
+                  class="mb-3 ps-3 text-input" required>
+                <input type="email" name="email" id="modal-register-email" placeholder="Email Address *"
+                  class="mb-3 ps-3 text-input" required>
+                <input type="password" name="password" id="modal-register-password" placeholder="Password *" class="ps-3 text-input" required>
+                <div id="modal-register-error" class="alert alert-danger mt-3" style="display: none;"></div>
+                <div id="modal-register-success" class="alert alert-success mt-3" style="display: none;"></div>
+              </form>
+            </div>
+          </div>
+          <div class="modal-footer mt-5 d-flex justify-content-center">
+            <button type="button" id="modal-register-btn" class="btn btn-red hvr-sweep-to-right dark-sweep">Register</button>
+            <button type="button" class="btn btn-outline-gray hvr-sweep-to-right dark-sweep" data-bs-dismiss="modal">Close</button>
+          </div>
+          <div class="text-center mt-4">
+            <p class="text-muted mb-0">
+              Already have an account? 
+              <a href="#" class="text-decoration-none fw-bold" onclick="document.getElementById('modalregister').closest('.modal').style.display='none'; document.getElementById('modallogin').click(); return false;" style="color: #ce071e;">Login here</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Registration -->
+
   <!-- Login -->
 
   <header id="header" class="site-header text-black">
@@ -910,6 +955,81 @@
       AuthManager.logout();
       // Reload page to reset everything
       window.location.reload();
+    });
+
+    /**
+     * Handle registration form submission
+     */
+    document.getElementById('modal-register-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('modal-register-name').value.trim();
+      const email = document.getElementById('modal-register-email').value.trim();
+      const password = document.getElementById('modal-register-password').value;
+      const errorDiv = document.getElementById('modal-register-error');
+      const successDiv = document.getElementById('modal-register-success');
+      const registerBtn = document.getElementById('modal-register-btn');
+      
+      // Clear previous messages
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      
+      // Validate
+      if (!name || !email || !password) {
+        errorDiv.textContent = 'All fields are required';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      // Validate password
+      const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+      if (!passwordRegex.test(password)) {
+        errorDiv.textContent = 'Password must be 8+ characters with 1 uppercase letter and 1 special character (!@#$%^&*)';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      // Disable button during request
+      registerBtn.disabled = true;
+      registerBtn.textContent = 'Registering...';
+      
+      try {
+        const response = await fetch('http://127.0.0.1:3000/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password }),
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          successDiv.textContent = 'Registration successful! Redirecting...';
+          successDiv.style.display = 'block';
+          
+          // Store credentials in sessionStorage for credentials page
+          sessionStorage.setItem('userCredentials', JSON.stringify({
+            id: result.user.id,
+            name: result.user.name,
+            email: result.user.email,
+            created_at: result.user.created_at
+          }));
+          
+          // Redirect to credentials page
+          setTimeout(() => {
+            window.location.href = 'credential.html';
+          }, 1500);
+        } else {
+          errorDiv.textContent = result.message || 'Registration failed';
+          errorDiv.style.display = 'block';
+          registerBtn.disabled = false;
+          registerBtn.textContent = 'Register';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Network error: ' + error.message;
+        errorDiv.style.display = 'block';
+        registerBtn.disabled = false;
+        registerBtn.textContent = 'Register';
+      }
     });
 
     /**
