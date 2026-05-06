@@ -315,7 +315,7 @@ async function handleCheckout(req, res, next) {
 
     // ========== TRY-CATCH: Save Order ==========
     try {
-      const orderResult = checkoutService.createOrder({
+      const orderResult = await checkoutService.createOrder({
         email,
         cardNumber,
         items: totalResult.itemsWithPrice,
