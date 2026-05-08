@@ -4,14 +4,14 @@ const path = require('path');
 require('dotenv').config();
 
 // Import database
-const { initDatabase, runMigrations } = require('./db/database');
-const migrate = require('./db/migrate');
+const { initDatabase, runMigrations } = require('./src/db/database');
+const migrate = require('./src/db/migrate');
 
 // Import refactored routes (layered architecture)
-const productRoutes = require('./routes/productRoutes');
-const authRoutes = require('./routes/authRoutes');
-const checkoutRoutes = require('./routes/checkoutRoutes');
-const orderRoutes = require('./routes/orderRoutes');
+const productRoutes = require('./src/routes/productRoutes');
+const authRoutes = require('./src/routes/authRoutes');
+const checkoutRoutes = require('./src/routes/checkoutRoutes');
+const orderRoutes = require('./src/routes/orderRoutes');
 
 // Initialize Express app
 const app = express();

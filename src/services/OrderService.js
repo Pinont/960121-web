@@ -1,14 +1,15 @@
 /**
  * Checkout Service
- * Pure business logic for checkout and order creation using SQLite
+ * Pure business logic for checkout and order creation.
+ * Never writes SQL — delegates all data access to OrderRepository and ProductRepository.
  */
-
-const { queryDatabase, executeDatabase, getOne } = require('../db/database');
 const { v4: uuidv4 } = require('uuid');
+const OrderRepository = require('../repositories/OrderRepository');
+const ProductRepository = require('../repositories/ProductRepository');
 
 class CheckoutService {
   /**
-   * Validate cart items
+   * Validate cart items against the database
    */
   async validateCartItems(cart, db) {
     const errors = [];
@@ -23,7 +24,7 @@ class CheckoutService {
         errors.push(`Invalid quantity for product ${productId}`);
       }
 
-      const product = await getOne(db, 'SELECT * FROM products WHERE id = ?', [productId]);
+      const product = await ProductRepository.findById(db, productId);
       if (!product) {
         errors.push(`Product ${productId} not found`);
       }
@@ -33,7 +34,7 @@ class CheckoutService {
   }
 
   /**
-   * Validate email
+   * Validate email format
    */
   validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,8 +78,8 @@ class CheckoutService {
       const itemsWithPrice = [];
 
       for (const [productId, item] of Object.entries(cart)) {
-        const product = await getOne(db, 'SELECT * FROM products WHERE id = ?', [productId]);
-        
+        const product = await ProductRepository.findById(db, productId);
+
         if (!product) {
           return {
             total: 0,
@@ -101,11 +102,7 @@ class CheckoutService {
 
       return { total, itemsWithPrice, error: null };
     } catch (error) {
-      return {
-        total: 0,
-        itemsWithPrice: [],
-        error: error.message,
-      };
+      return { total: 0, itemsWithPrice: [], error: error.message };
     }
   }
 
@@ -117,19 +114,14 @@ class CheckoutService {
       const orderId = uuidv4();
       const timestamp = new Date().toISOString();
 
-      await executeDatabase(
-        db,
-        `INSERT INTO orders (id, email, items, total, status, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          orderId,
-          orderData.email,
-          JSON.stringify(orderData.items),
-          orderData.total,
-          'completed',
-          timestamp
-        ]
-      );
+      await OrderRepository.insert(db, {
+        id: orderId,
+        email: orderData.email,
+        items: orderData.items,
+        total: orderData.total,
+        status: 'completed',
+        created_at: timestamp,
+      });
 
       return { success: true, orderId, error: null };
     } catch (error) {
@@ -139,36 +131,22 @@ class CheckoutService {
   }
 
   /**
-   * Get all orders
+   * Get all orders (optionally filtered by email)
    */
   async getAllOrders(db, email = null) {
     try {
-      let query = 'SELECT * FROM orders';
-      let params = [];
-
-      if (email) {
-        query += ' WHERE email = ?';
-        params.push(email);
-      }
-
-      query += ' ORDER BY created_at DESC';
-
-      const orders = await queryDatabase(db, query, params);
+      const orders = await OrderRepository.findAll(db, email);
 
       return {
         success: true,
         data: orders.map(order => ({
           ...order,
-          items: JSON.parse(order.items)
-        }))
+          items: JSON.parse(order.items),
+        })),
       };
     } catch (error) {
       console.error('Error getting orders:', error);
-      return {
-        success: false,
-        data: [],
-        error: error.message
-      };
+      return { success: false, data: [], error: error.message };
     }
   }
 
@@ -177,34 +155,19 @@ class CheckoutService {
    */
   async getOrderById(orderId, db) {
     try {
-      const order = await getOne(
-        db,
-        'SELECT * FROM orders WHERE id = ?',
-        [orderId]
-      );
+      const order = await OrderRepository.findById(db, orderId);
 
       if (!order) {
-        return {
-          success: false,
-          data: null,
-          message: 'Order not found'
-        };
+        return { success: false, data: null, message: 'Order not found' };
       }
 
       return {
         success: true,
-        data: {
-          ...order,
-          items: JSON.parse(order.items)
-        }
+        data: { ...order, items: JSON.parse(order.items) },
       };
     } catch (error) {
       console.error('Error getting order:', error);
-      return {
-        success: false,
-        data: null,
-        error: error.message
-      };
+      return { success: false, data: null, error: error.message };
     }
   }
 }

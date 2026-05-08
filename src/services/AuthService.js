@@ -1,28 +1,24 @@
 /**
  * Auth Service
- * Pure business logic for authentication and user management using SQLite
+ * Pure business logic for authentication and user management.
+ * Never writes SQL — delegates all data access to UserRepository.
  */
-
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const { getOne, queryDatabase, executeDatabase } = require('../db/database');
+const UserRepository = require('../repositories/UserRepository');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
 
 class AuthService {
   /**
-   * Find user by email in database
+   * Find user by email
    */
   async findUserByEmail(email, db) {
     try {
-      const user = await getOne(
-        db,
-        'SELECT * FROM users WHERE email = ?',
-        [email.toLowerCase()]
-      );
+      const user = await UserRepository.findByEmail(db, email);
       return user || null;
     } catch (error) {
       console.error('Error finding user:', error);
@@ -34,10 +30,7 @@ class AuthService {
    * Compare MD5 password (legacy support)
    */
   compareMD5Password(plainPassword, md5Hash) {
-    const hash = crypto
-      .createHash('md5')
-      .update(plainPassword)
-      .digest('hex');
+    const hash = crypto.createHash('md5').update(plainPassword).digest('hex');
     return hash === md5Hash;
   }
 
@@ -49,14 +42,9 @@ class AuthService {
       const user = await this.findUserByEmail(email, db);
 
       if (!user) {
-        return {
-          success: false,
-          user: null,
-          message: 'Invalid email or password',
-        };
+        return { success: false, user: null, message: 'Invalid email or password' };
       }
 
-      // Check if password is bcrypt hash
       const isBcryptHash = user.password && /^\$2[aby]\$/.test(user.password);
       let passwordMatch = false;
 
@@ -67,11 +55,7 @@ class AuthService {
       }
 
       if (!passwordMatch) {
-        return {
-          success: false,
-          user: null,
-          message: 'Invalid email or password',
-        };
+        return { success: false, user: null, message: 'Invalid email or password' };
       }
 
       return {
@@ -86,11 +70,7 @@ class AuthService {
       };
     } catch (error) {
       console.error('Authentication error:', error);
-      return {
-        success: false,
-        user: null,
-        message: 'Authentication failed',
-      };
+      return { success: false, user: null, message: 'Authentication failed' };
     }
   }
 
@@ -109,23 +89,21 @@ class AuthService {
 
       const existingUser = await this.findUserByEmail(email, db);
       if (existingUser) {
-        return {
-          success: false,
-          message: 'Email already registered',
-          code: 409,
-        };
+        return { success: false, message: 'Email already registered', code: 409 };
       }
 
       const userId = uuidv4();
       const hashedPassword = await bcrypt.hash(password, 10);
       const now = new Date().toISOString();
 
-      await executeDatabase(
-        db,
-        `INSERT INTO users (id, name, email, password, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [userId, name.trim(), email.toLowerCase().trim(), hashedPassword, now, now]
-      );
+      await UserRepository.insert(db, {
+        id: userId,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        created_at: now,
+        updated_at: now,
+      });
 
       return {
         success: true,
@@ -159,7 +137,6 @@ class AuthService {
         name: user.name,
         iat: Math.floor(Date.now() / 1000),
       };
-
       return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
     } catch (error) {
       console.error('Token generation error:', error);
