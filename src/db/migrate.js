@@ -16,7 +16,7 @@ async function migrateProducts(db) {
   try {
     console.log('\n📦 Migrating products...');
     
-    const productsPath = path.join(__dirname, '../data/products.json');
+    const productsPath = path.join(__dirname, '../../data/products.json');
     const productsData = JSON.parse(fs.readFileSync(productsPath, 'utf-8'));
 
     let count = 0;
@@ -60,7 +60,7 @@ async function migrateUsers(db) {
   try {
     console.log('\n👥 Migrating users...');
     
-    const authPath = path.join(__dirname, '../data/auth_user.json');
+    const authPath = path.join(__dirname, '../../data/auth_user.json');
     const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
 
     let count = 0;
@@ -105,7 +105,7 @@ async function migrateOrders(db) {
   try {
     console.log('\n📦 Migrating orders...');
     
-    const ordersPath = path.join(__dirname, '../data/orders.json');
+    const ordersPath = path.join(__dirname, '../../data/orders.json');
     
     // Check if orders file exists
     if (!fs.existsSync(ordersPath)) {

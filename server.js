@@ -4,14 +4,14 @@ const path = require('path');
 require('dotenv').config();
 
 // Import database
-const { initDatabase, runMigrations } = require('./src/db/database');
+const { initDatabase } = require('./src/db/database'); // fix: removed dead runMigrations import
 const migrate = require('./src/db/migrate');
 
 // Import refactored routes (layered architecture)
-const productRoutes = require('./src/routes/productRoutes');
-const authRoutes = require('./src/routes/authRoutes');
+const productRoutes  = require('./src/routes/productRoutes');
+const authRoutes     = require('./src/routes/authRoutes');
 const checkoutRoutes = require('./src/routes/checkoutRoutes');
-const orderRoutes = require('./src/routes/orderRoutes');
+const orderRoutes    = require('./src/routes/orderRoutes');
 
 // Initialize Express app
 const app = express();
@@ -39,10 +39,10 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
-app.use('/api/products', productRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/checkout', checkoutRoutes);
-app.use('/api/orders', orderRoutes);
+app.use('/api/products',  productRoutes);
+app.use('/api/auth',      authRoutes);
+app.use('/api/checkout',  checkoutRoutes);
+app.use('/api/orders',    orderRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -68,12 +68,12 @@ async function startServer() {
   try {
     console.log('📦 Initializing database...');
     globalDb = await initDatabase();
-    
+
     console.log('🔄 Running migrations...');
     await migrate.runMigrations();
-    
+
     console.log('✓ Database ready!');
-    
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log('📊 Using SQLite database for data storage');
