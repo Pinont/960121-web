@@ -3,14 +3,28 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-// Import consolidated routes (auth + products + checkout)
-const productsRoutes = require('./src/products');
-const authRoutes = require('./src/auth');
-const checkoutRoutes = require('./src/checkout');
+// Import database
+const { initDatabase, runMigrations } = require('./db/database');
+const migrate = require('./db/migrate');
+
+// Import refactored routes (layered architecture)
+const productRoutes = require('./routes/productRoutes');
+const authRoutes = require('./routes/authRoutes');
+const checkoutRoutes = require('./routes/checkoutRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Global database connection
+let globalDb = null;
+
+// Middleware to attach database to request
+app.use((req, res, next) => {
+  req.db = globalDb;
+  next();
+});
 
 // Middleware
 app.use(cors({
@@ -25,17 +39,11 @@ app.use(express.urlencoded({ extended: true }));
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve auth.js for frontend (client-side AuthManager)
-app.get('/auth.js', (req, res) => {
-  const authPath = path.join(__dirname, 'src/auth.js');
-  res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(authPath);
-});
-
 // Routes
-app.use('/api/products', productsRoutes);
+app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/checkout', checkoutRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -56,9 +64,27 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// Initialize database and start server
+async function startServer() {
+  try {
+    console.log('📦 Initializing database...');
+    globalDb = await initDatabase();
+    
+    console.log('🔄 Running migrations...');
+    await migrate.runMigrations();
+    
+    console.log('✓ Database ready!');
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log('📊 Using SQLite database for data storage');
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;
