@@ -7,7 +7,16 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, '../data/store.db');
+const DB_PATH = path.join(__dirname, '../../data/store.db');
+
+
+const dataDir = path.dirname(DB_PATH);
+
+if (!fs.existsSync(dataDir)) {
+
+  fs.mkdirSync(dataDir, { recursive: true });
+
+}
 
 /**
  * Initialize database and create tables if they don't exist
