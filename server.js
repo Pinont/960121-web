@@ -20,12 +20,6 @@ const PORT = process.env.PORT || 3000;
 // Global database connection
 let globalDb = null;
 
-// Middleware to attach database to request
-app.use((req, res, next) => {
-  req.db = globalDb;
-  next();
-});
-
 // Middleware
 app.use(cors({
   origin: '*',
@@ -35,6 +29,11 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use((req, res, next) => {
+  req.db = globalDb;
+  next();
+});
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
