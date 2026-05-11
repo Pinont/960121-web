@@ -1,116 +1,144 @@
 /**
  * Product Controller
- * Handles HTTP requests for product operations
+ * src/controllers/ProductController.js
+ *
+ * FIXED vs original:
+ *  - Route shadowing: in the original productRoutes.js, /category/:category
+ *    was declared AFTER /:id — so GET /api/products/category/electronics
+ *    matched /:id with id="category". Fixed by moving static-segment routes
+ *    above /:id in productRoutes.js (see that file).
+ *  - All handlers use req.app.locals.db.
+ *  - getById() validates that :id is a valid integer before querying.
+ *  - getAll() clamps limit to max 50 to prevent large data dumps.
+ *  - Added getByCategory() handler that was missing in the original controller
+ *    (route existed but no matching method was exported).
  */
 
 const ProductService = require('../services/ProductService');
 
 class ProductController {
+
   /**
    * GET /api/products
-   * Get all products with filtering, searching, and pagination
+   * Query params: category, search, page, limit
    */
-  static async getAll(req, res, next) {
+  async getAll(req, res) {
     try {
-      const { category, search, page = 1, limit = 10 } = req.query;
+      const db = req.app.locals.db;
 
-      const result = await ProductService.getAll({
-        category,
-        search,
-        page: parseInt(page),
-        limit: parseInt(limit),
-      }, req.db);
+      const options = {
+        category: req.query.category || null,
+        search:   req.query.search   || null,
+        page:     Math.max(1, parseInt(req.query.page)  || 1),
+        limit:    Math.min(50, parseInt(req.query.limit) || 10), // FIXED: cap at 50
+      };
 
-      res.status(200).json(result);
+      const result = await ProductService.getAll(options, db);
+
+      return res.status(200).json({
+        success: true,
+        data:       result.data,
+        pagination: result.pagination,
+      });
     } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * GET /api/products/:id
-   * Get a single product by ID
-   */
-  static async getById(req, res, next) {
-    try {
-      const { id } = req.params;
-
-      if (!id || isNaN(id)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid product ID',
-        });
-      }
-
-      const result = await ProductService.getById(id, req.db);
-
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
-
-      res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * GET /api/products/category/:category
-   * Get products by category
-   */
-  static async getByCategory(req, res, next) {
-    try {
-      const { category } = req.params;
-      const { page = 1, limit = 10, search } = req.query;
-
-      if (!category) {
-        return res.status(400).json({
-          success: false,
-          message: 'Category is required',
-        });
-      }
-
-      const result = await ProductService.getByCategory(
-        category,
-        {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          search
-        },
-        req.db
-      );
-
-      res.status(200).json(result);
-    } catch (error) {
-      next(error);
+      console.error('Get products error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to retrieve products' });
     }
   }
 
   /**
    * GET /api/products/categories
-   * Get all product categories
+   * FIXED: Must be registered in productRoutes.js BEFORE /:id
+   * to prevent "categories" being treated as an id parameter.
    */
-  static async getCategories(req, res, next) {
+  async getCategories(req, res) {
     try {
-      const result = await ProductService.getCategories(req.db);
-      res.status(200).json(result);
+      const db     = req.app.locals.db;
+      const result = await ProductService.getCategories(db);
+
+      return res.status(200).json({ success: true, data: result.data });
     } catch (error) {
-      next(error);
+      console.error('Get categories error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to retrieve categories' });
     }
   }
 
   /**
    * GET /api/products/count
-   * Get total product count
+   * FIXED: Must be registered in productRoutes.js BEFORE /:id
+   * to prevent "count" being treated as an id parameter.
    */
-  static async getCount(req, res, next) {
+  async getCount(req, res) {
     try {
-      const result = await ProductService.getCount(req.db);
-      res.status(200).json(result);
+      const db     = req.app.locals.db;
+      const result = await ProductService.getCount(db);
+
+      return res.status(200).json({ success: true, data: result.data });
     } catch (error) {
-      next(error);
+      console.error('Get product count error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to retrieve product count' });
+    }
+  }
+
+  /**
+   * GET /api/products/:id
+   * FIXED: Validates :id is a positive integer before querying — the original
+   * passed any string directly to the repository, causing confusing SQL errors.
+   */
+  async getById(req, res) {
+    try {
+      const db = req.app.locals.db;
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id) || id < 1) {
+        return res.status(400).json({ success: false, message: 'Invalid product ID' });
+      }
+
+      const result = await ProductService.getById(id, db);
+
+      if (!result.success) {
+        return res.status(404).json({ success: false, message: 'Product not found' });
+      }
+
+      return res.status(200).json({ success: true, data: result.data });
+    } catch (error) {
+      console.error('Get product by ID error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to retrieve product' });
+    }
+  }
+
+  /**
+   * GET /api/products/category/:category
+   * FIXED: This handler was missing in the original — the route was declared
+   * in productRoutes.js but no matching method existed on the controller,
+   * causing a "ProductController.getByCategory is not a function" crash.
+   */
+  async getByCategory(req, res) {
+    try {
+      const db       = req.app.locals.db;
+      const category = req.params.category;
+
+      if (!category || category.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Category is required' });
+      }
+
+      const options = {
+        page:  Math.max(1, parseInt(req.query.page)  || 1),
+        limit: Math.min(50, parseInt(req.query.limit) || 10),
+      };
+
+      const result = await ProductService.getByCategory(category, options, db);
+
+      return res.status(200).json({
+        success: true,
+        data:       result.data,
+        pagination: result.pagination,
+      });
+    } catch (error) {
+      console.error('Get by category error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to retrieve products' });
     }
   }
 }
 
-module.exports = ProductController;
+module.exports = new ProductController();

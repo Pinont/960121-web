@@ -1,5 +1,21 @@
-.DS_Store
-AGENTS.md
-node_modules
-.continue
+node_modules/
+dist/
+build/
+coverage/
+logs/
+*.log
+.continue/
 
+package-lock.json
+yarn.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment secrets
+.env
+.env.local
+.env.production
+
+# Database
+data/*.db*

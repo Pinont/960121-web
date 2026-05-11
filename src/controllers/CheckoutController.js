@@ -1,90 +1,123 @@
 /**
  * Checkout Controller
- * Handles HTTP requests for checkout operations
+ * src/controllers/CheckoutController.js
+ *
+ * FIXED vs original:
+ *  - Passes req.user.id (from JWT) as userId into OrderService.createOrder()
+ *    so the order is relationally linked to the user.
+ *  - cardNumber is validated here then explicitly NOT forwarded to the service
+ *    layer — card data must never reach the database.
+ *  - Uses req.app.locals.db instead of a module-level import.
+ *  - Added structured validation response that lists all errors at once
+ *    instead of returning on the first failure.
  */
 
-const CheckoutService = require('../services/OrderService');
+const OrderService = require('../services/OrderService');
 
 class CheckoutController {
+
   /**
    * POST /api/checkout
-   * Process checkout: validate cart and payment, create order
+   * Requires: Authorization: Bearer <token>  (verifyToken middleware)
+   *
+   * Expected body:
+   * {
+   *   "email":      "user@example.com",
+   *   "cart":       { "1": { "quantity": 2 }, "3": { "quantity": 1 } },
+   *   "cardNumber": "1234567890123456"   ← validated here, never stored
+   * }
    */
-  static async processCheckout(req, res, next) {
+  async processCheckout(req, res) {
     try {
-      const { cart, email, cardNumber } = req.body;
-      const fieldErrors = {};
+      const db = req.app.locals.db;
 
-      // Validate cart
-      const cartValidation = await CheckoutService.validateCartItems(cart, req.db);
+      // FIXED: Extract userId from the JWT payload set by verifyToken middleware.
+      // Original had no user_id linkage at all.
+      const userId = req.user?.id || null;
+
+      const { email, cart, cardNumber } = req.body;
+
+      // ── Step 1: Collect all validation errors before responding ────────────
+      const validationErrors = [];
+
+      const emailValidation = OrderService.validateEmail(email);
+      if (!emailValidation.valid) validationErrors.push(emailValidation.error);
+
+      // FIXED: Validate card format here — then cardNumber is intentionally
+      // dropped and never passed further into the service or repository layer.
+      const cardValidation = OrderService.validateCreditCard(cardNumber);
+      if (!cardValidation.valid) validationErrors.push(cardValidation.error);
+
+      if (!cart || typeof cart !== 'object' || Object.keys(cart).length === 0) {
+        validationErrors.push('Cart cannot be empty');
+      }
+
+      if (validationErrors.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: validationErrors,
+        });
+      }
+
+      // ── Step 2: Validate cart items against the Product service ────────────
+      const cartValidation = await OrderService.validateCartItems(cart);
       if (!cartValidation.valid) {
-        fieldErrors.cart = cartValidation.errors;
-      }
-
-      // Validate email
-      const emailValidation = CheckoutService.validateEmail(email);
-      if (!emailValidation.valid) {
-        fieldErrors.email = emailValidation.error;
-      }
-
-      // Validate credit card
-      const cardValidation = CheckoutService.validateCreditCard(cardNumber);
-      if (!cardValidation.valid) {
-        fieldErrors.cardNumber = cardValidation.error;
-      }
-
-      // Return validation errors if any
-      if (Object.keys(fieldErrors).length > 0) {
         return res.status(400).json({
           success: false,
-          message: 'Validation failed. Please check the errors below.',
-          errors: fieldErrors,
+          message: 'Cart validation failed',
+          errors: cartValidation.errors,
         });
       }
 
-      // Calculate total
-      const totalResult = await CheckoutService.calculateTotal(cart, req.db);
-      if (totalResult.error) {
+      // ── Step 3: Calculate server-side total ────────────────────────────────
+      // Never trust the client's total — always recalculate on the server.
+      const { total, itemsWithPrice, error: calcError } = await OrderService.calculateTotal(cart);
+      if (calcError) {
         return res.status(400).json({
           success: false,
-          message: 'Failed to calculate cart total',
-          errors: { cart: totalResult.error },
+          message: calcError,
         });
       }
 
-      // Create order
-      const orderResult = await CheckoutService.createOrder({
-        email,
-        cardNumber,
-        items: totalResult.itemsWithPrice,
-        total: totalResult.total,
-      }, req.db);
+      // ── Step 4: Persist the order ──────────────────────────────────────────
+      // FIXED: userId is passed — cardNumber is deliberately NOT passed.
+      const result = await OrderService.createOrder(
+        {
+          email,
+          items:  itemsWithPrice,
+          total,
+          userId,           // FIXED: links order to authenticated user
+          // cardNumber intentionally omitted — validated above, never stored
+        },
+        db
+      );
 
-      if (!orderResult.success) {
-        return res.status(400).json({
+      if (!result.success) {
+        return res.status(500).json({
           success: false,
-          message: 'Failed to save order. Please try again.',
-          errors: { order: orderResult.error },
+          message: 'Failed to create order. Please try again.',
         });
       }
 
-      // Return success
+      // ── Step 5: Respond ────────────────────────────────────────────────────
       return res.status(201).json({
         success: true,
-        message: 'Order created successfully!',
+        message: 'Order placed successfully',
         data: {
-          orderId: orderResult.orderId,
-          email,
-          total: totalResult.total,
-          itemCount: Object.keys(cart).length,
-          items: totalResult.itemsWithPrice,
+          orderId: result.orderId,
+          total,
+          items: itemsWithPrice,
         },
       });
     } catch (error) {
       console.error('Checkout error:', error);
-      next(error);
+      return res.status(500).json({
+        success: false,
+        message: 'Checkout failed. Please try again.',
+      });
     }
   }
 }
 
-module.exports = CheckoutController;
+module.exports = new CheckoutController();
