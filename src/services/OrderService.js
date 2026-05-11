@@ -1,224 +1,220 @@
-/**
- * Order Service
- * src/services/OrderService.js
- *
- * FIXED vs original:
- *  - createOrder() now passes user_id from the JWT token into the repository
- *    so orders are properly linked to users (original only stored email).
- *  - createOrder() strips cardNumber before persisting — card data must NEVER
- *    be stored. Original passed raw orderData including cardNumber to the repo.
- *  - getAllOrders() passes limit/offset for SQL-level pagination instead of
- *    fetching all rows and slicing in JS.
- *  - Removed JSON.parse(order.items) calls — items are now proper relational
- *    rows returned by OrderRepository, not a serialized JSON blob.
- *  - PRODUCT_SERVICE_URL fallback is kept but clearly marked non-sensitive.
- *  - createOrder() now decrements stock for each purchased item via
- *    ProductRepository.updateStock() — original never reduced stock after purchase.
- */
-
-const { v4: uuidv4 } = require('uuid');
-const OrderRepository   = require('../repositories/OrderRepository');
-const ProductRepository = require('../repositories/ProductRepository');
-
-// Non-sensitive default — no || fallback security risk here
-const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://localhost:3001';
-
-// ── Internal helper ───────────────────────────────────────────────────────────
-async function fetchProductById(productId) {
-  try {
-    const response = await fetch(`${PRODUCT_SERVICE_URL}/api/products/${productId}`);
-    if (!response.ok) return null;
-    const json = await response.json();
-    return json.data || null;
-  } catch (error) {
-    console.error(`Failed to fetch product ${productId}:`, error.message);
-    return null;
-  }
-}
+// src/services/OrderService.js
+const crypto = require('crypto');
 
 class OrderService {
-
   /**
-   * Validate all cart items against the Product microservice.
+   * SECURITY FIX #1: Calculate order total from database
+   * Never trust client-provided prices
    */
-  async validateCartItems(cart) {
-    const errors = [];
+  static async calculateTotalFromDB(cart, db) {
+    try {
+      const itemsWithPrice = [];
+      let total = 0;
 
-    if (!cart || typeof cart !== 'object' || Object.keys(cart).length === 0) {
-      errors.push('Cart is empty');
-      return { valid: false, errors };
-    }
-
-    for (const [productId, item] of Object.entries(cart)) {
-      if (!item.quantity || typeof item.quantity !== 'number' || item.quantity < 1) {
-        errors.push(`Invalid quantity for product ${productId}`);
+      if (!cart || typeof cart !== 'object') {
+        return { total: null, itemsWithPrice: null, error: 'Invalid cart structure' };
       }
 
-      const product = await fetchProductById(productId);
-      if (!product) {
-        errors.push(`Product ${productId} not found`);
+      const cartEntries = Object.entries(cart);
+      if (cartEntries.length === 0) {
+        return { total: null, itemsWithPrice: null, error: 'Cart is empty' };
       }
-    }
 
-    return { valid: errors.length === 0, errors };
+      for (const [productId, itemData] of cartEntries) {
+        if (!/^\d+$/.test(productId)) {
+          return { total: null, itemsWithPrice: null, error: `Invalid product ID format: ${productId}` };
+        }
+
+        const { quantity } = itemData;
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          return { total: null, itemsWithPrice: null, error: `Invalid quantity for product ${productId}.` };
+        }
+
+        const product = await db.get('SELECT id, name, price, stock FROM products WHERE id = ?', [productId]);
+        if (!product) {
+          return { total: null, itemsWithPrice: null, error: `Product ${productId} not found in catalog` };
+        }
+
+        if (quantity > product.stock) {
+          return { total: null, itemsWithPrice: null, error: `Insufficient stock for ${product.name}.` };
+        }
+
+        if (typeof product.price !== 'number' || product.price < 0) {
+          return { total: null, itemsWithPrice: null, error: `Invalid price for product ${product.id}` };
+        }
+
+        const itemTotal = parseFloat((product.price * quantity).toFixed(2));
+        itemsWithPrice.push({
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          quantity,
+          itemTotal
+        });
+
+        total += itemTotal;
+      }
+
+      total = parseFloat(total.toFixed(2));
+      return { total, itemsWithPrice, error: null };
+    } catch (error) {
+      console.error('[OrderService] Error in calculateTotalFromDB:', error);
+      return { total: null, itemsWithPrice: null, error: `Failed to calculate cart total: ${error.message}` };
+    }
   }
 
   /**
-   * Validate email format.
+   * Validate that all cart items exist in catalog
    */
-  validateEmail(email) {
+  static async validateCartItems(cart, db) {
+    try {
+      const validationErrors = [];
+      for (const productId of Object.keys(cart)) {
+        const product = await db.get('SELECT id FROM products WHERE id = ?', [productId]);
+        if (!product) validationErrors.push(`Product ${productId} does not exist`);
+      }
+      return { valid: validationErrors.length === 0, errors: validationErrors };
+    } catch (error) {
+      return { valid: false, errors: [error.message] };
+    }
+  }
+
+  /**
+   * Validate that provided email belongs to the authenticated user (ownership)
+   * This function can be expanded to support multiple emails per user if required
+   */
+  static validateEmailOwnership(userEmail, providedEmail) {
+    return { valid: userEmail === providedEmail, error: userEmail === providedEmail ? null : 'Provided email does not match account email' };
+  }
+
+  /**
+   * Validate email format
+   */
+  static validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || typeof email !== 'string') {
-      return { valid: false, error: 'Email is required' };
+      return { valid: false, error: 'Email is required and must be a string' };
     }
     if (!emailRegex.test(email)) {
       return { valid: false, error: 'Invalid email format' };
     }
-    return { valid: true, error: null };
-  }
-
-  /**
-   * Validate credit card format (16 digits).
-   * NOTE: We validate the format but never store the number — see createOrder().
-   */
-  validateCreditCard(cardNumber) {
-    const cardRegex = /^[0-9]{16}$/;
-    if (!cardNumber || typeof cardNumber !== 'string') {
-      return { valid: false, error: 'Credit card number is required' };
-    }
-    const sanitized = cardNumber.replace(/[\s-]/g, '');
-    if (!cardRegex.test(sanitized)) {
-      return { valid: false, error: 'Credit card must be 16 digits' };
+    if (email.length > 254) {
+      return { valid: false, error: 'Email is too long (max 254 characters)' };
     }
     return { valid: true, error: null };
   }
 
   /**
-   * Calculate total price by fetching live prices from the Product service.
+   * Validate card number (basic format)
+   * IMPORTANT: In production, use a PCI-compliant gateway (Stripe/Adyen/etc.)
+   * and NEVER store raw card numbers
    */
-  async calculateTotal(cart) {
+  static validateCardNumber(cardNumber) {
+    const clean = (cardNumber || '').replace(/[\s-]/g, '');
+    if (!/^\d{13,19}$/.test(clean)) {
+      return { valid: false, error: 'Invalid card number format. 13-19 digits required.' };
+    }
+    if (!this.luhnCheck(clean)) {
+      return { valid: false, error: 'Invalid card number (failed Luhn check)' };
+    }
+    return { valid: true, error: null };
+  }
+
+  static luhnCheck(num) {
+    let sum = 0;
+    let shouldDouble = false;
+    for (let i = num.length - 1; i >= 0; i--) {
+      let digit = parseInt(num.charAt(i), 10);
+      if (shouldDouble) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+      shouldDouble = !shouldDouble;
+    }
+    return sum % 10 === 0;
+  }
+
+  /**
+   * Mock payment processing
+   * Replace with real gateway integration in production
+   */
+  static async processPayment(cardNumber, amount, email) {
     try {
-      let total = 0;
-      const itemsWithPrice = [];
-
-      for (const [productId, item] of Object.entries(cart)) {
-        const product = await fetchProductById(productId);
-        if (!product) {
-          return { total: 0, itemsWithPrice: [], error: `Product ${productId} not found` };
-        }
-
-        const itemTotal = product.price * item.quantity;
-        total += itemTotal;
-        itemsWithPrice.push({
-          id: product.id,
-          title: product.title,
-          price: product.price,
-          quantity: item.quantity,
-          subtotal: itemTotal,
-        });
+      // Basic format check again
+      const cardValidation = this.validateCardNumber(cardNumber);
+      if (!cardValidation.valid) {
+        return { success: false, error: cardValidation.error, transactionId: null };
       }
 
-      return { total, itemsWithPrice, error: null };
+      // Mock gateway delay
+      await new Promise((r) => setTimeout(r, 100));
+
+      // Simple deterministic mock: fail 5% of the time
+      if (Math.random() < 0.05) {
+        return { success: false, error: 'Payment declined by gateway', transactionId: null };
+      }
+
+      const transactionId = `TXN-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+      return { success: true, transactionId, amount, email, timestamp: new Date().toISOString() };
     } catch (error) {
-      return { total: 0, itemsWithPrice: [], error: error.message };
+      console.error('[OrderService] Payment error:', error);
+      return { success: false, error: 'Payment processing error', transactionId: null };
     }
   }
 
   /**
-   * Create a new order.
-   *
-   * FIXED: Two critical changes from the original:
-   *  1. user_id is now extracted from the validated JWT token (req.user.id)
-   *     and stored on the order so it is relationally linked to the users table.
-   *  2. cardNumber is explicitly excluded before persisting — card data must
-   *     NEVER be stored. The original passed the full orderData object (which
-   *     contained cardNumber) directly into OrderRepository.insert().
-   *
-   * @param {object} orderData - { email, cart, total, items, userId }
-   * @param {object} db
+   * Persist the order (and items) to DB
    */
-  async createOrder(orderData, db) {
+  static async createOrder(orderData, db) {
     try {
-      const orderId   = uuidv4();
-      const timestamp = new Date().toISOString();
+      const { email, items, total, userId, paymentId, paymentStatus, orderStatus } = orderData;
 
-      // FIXED: Destructure explicitly — cardNumber is intentionally omitted
-      const { email, items, total, userId } = orderData;
+      const result = await db.run(
+        `INSERT INTO orders (user_id, email, total, payment_id, payment_status, order_status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, email, total, paymentId, paymentStatus, orderStatus, new Date().toISOString(), new Date().toISOString()]
+      );
 
-      await OrderRepository.insert(db, {
-        id:         orderId,
-        user_id:    userId || null,   // FIXED: link order to the authenticated user
-        email:      email,
-        items:      items,            // array of { id, title, price, quantity, subtotal }
-        total:      total,
-        status:     'completed',
-        created_at: timestamp,
-        // cardNumber is deliberately NOT included here
-      });
+      const orderId = result?.lastID;
 
-      // FIXED: Decrement stock for each purchased item.
-      // Original never called updateStock — inventory was never reduced after purchase.
+      if (!orderId) {
+        return { success: false, orderId: null, error: 'Failed to insert order' };
+      }
+
+      // Insert order items
       for (const item of items) {
-        await ProductRepository.updateStock(db, item.id, item.quantity);
+        await db.run(
+          `INSERT INTO order_items (order_id, product_id, product_name, quantity, price, item_total)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [orderId, item.productId, item.name, item.quantity, item.price, item.itemTotal]
+        );
       }
 
       return { success: true, orderId, error: null };
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('[OrderService] Error in createOrder:', error);
       return { success: false, orderId: null, error: error.message };
     }
   }
 
   /**
-   * Get all orders, optionally filtered by email, with SQL-level pagination.
-   * FIXED: Passes limit/offset to the repository instead of slicing in JS.
-   *
-   * @param {object} db
-   * @param {string|null} email
-   * @param {number} limit
-   * @param {number} offset
+   * Get order by ID for a specific user
    */
-  async getAllOrders(db, email = null, limit = 20, offset = 0) {
+  static async getOrderById(orderId, userId, db) {
     try {
-      // FIXED: items are now relational rows — no JSON.parse() needed
-      const orders = await OrderRepository.findAll(db, email, limit, offset);
-      return { success: true, data: orders };
-    } catch (error) {
-      console.error('Error getting orders:', error);
-      return { success: false, data: [], error: error.message };
-    }
-  }
-
-  /**
-   * Get orders by user ID (ownership-safe).
-   * FIXED: Uses user_id FK lookup instead of email.
-   */
-  async getOrdersByUserId(db, userId, limit = 20, offset = 0) {
-    try {
-      const orders = await OrderRepository.findByUserId(db, userId, limit, offset);
-      return { success: true, data: orders };
-    } catch (error) {
-      console.error('Error getting orders by user:', error);
-      return { success: false, data: [], error: error.message };
-    }
-  }
-
-  /**
-   * Get a single order by ID.
-   * FIXED: items are relational rows — no JSON.parse() needed.
-   */
-  async getOrderById(orderId, db) {
-    try {
-      const order = await OrderRepository.findById(db, orderId);
+      const order = await db.get('SELECT * FROM orders WHERE id = ? AND user_id = ?', [orderId, userId]);
       if (!order) {
-        return { success: false, data: null, message: 'Order not found' };
+        return { success: false, order: null, error: 'Order not found' };
       }
-      return { success: true, data: order };
+
+      const items = await db.all('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
+      return { success: true, order: { ...order, items }, error: null };
     } catch (error) {
-      console.error('Error getting order:', error);
-      return { success: false, data: null, error: error.message };
+      console.error('[OrderService] Error in getOrderById:', error);
+      return { success: false, order: null, error: error.message };
     }
   }
 }
 
-module.exports = new OrderService();
+module.exports = OrderService;

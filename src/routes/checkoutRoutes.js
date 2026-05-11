@@ -1,48 +1,34 @@
-/**
- * Checkout Routes
- * POST endpoint for checkout operations
- */
-
+// src/routes/checkoutRoutes.js
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const CheckoutController = require('../controllers/CheckoutController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-/**
- * POST /api/checkout
- * Process checkout: validate cart and payment, create order
- * Requires: Authorization header with JWT token
- *
- * Request Body:
- * {
- *   "cart": { "1": { "quantity": 2 }, "3": { "quantity": 1 } },
- *   "email": "user@example.com",
- *   "cardNumber": "1234567890123456"
- * }
- *
- * Response (Success - 201):
- * {
- *   "success": true,
- *   "message": "Order created successfully!",
- *   "data": {
- *     "orderId": "ORD-...",
- *     "email": "user@example.com",
- *     "total": 350.00,
- *     "items": [...]
- *   }
- * }
- *
- * Response (Validation Error - 400):
- * {
- *   "success": false,
- *   "message": "Validation failed. Please check the errors below.",
- *   "errors": {
- *     "email": "Invalid email format",
- *     "cardNumber": "Credit card must be 16 digits"
- *   }
- * }
- */
-router.post('/', verifyToken, CheckoutController.processCheckout);
+// Rate limiting to mitigate brute force / DoS on checkout
+const checkoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // max 5 attempts per user (auth'd) per window
+  message: 'Too many checkout attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  handler: (req, res) => {
+    console.warn(`[SECURITY] Rate limit exceeded for ${req.user?.id || req.ip}`);
+    res.status(429).json({
+      success: false,
+      message: 'Too many checkout requests. Please wait 15 minutes before retrying.'
+    });
+  },
+  skip: (req) => process.env.NODE_ENV === 'test',
+});
+
+// POST /api/checkout
+// Authenticate, apply rate limit, then process securely
+router.post('/', verifyToken, checkoutLimiter, CheckoutController.processCheckout);
+
+// GET /api/checkout/status/:orderId
+router.get('/status/:orderId', verifyToken, CheckoutController.getOrderStatus);
 
 module.exports = router;
